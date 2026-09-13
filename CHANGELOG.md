@@ -9,6 +9,24 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.6.1] - 2026-09-13
+
+### Interno
+
+Refatoração para arquitetura em camadas (ver `docs/ARQUITETURA.md`), sem
+mudança de comportamento:
+
+- `src/domain`: tipos e funções puras (layout, cores, operações em bloco,
+  rótulos, validação, formato `.engsched`).
+- `src/application`: estado único do projeto com reducer, autosave e o hook
+  `useProject`.
+- `src/infrastructure`: salvar/abrir arquivo atrás de uma interface, com
+  adapters para navegador e Electron.
+- 61 testes unitários com Vitest (`npm test`).
+- Os dados salvos no navegador passam a ficar em uma única chave; os dados
+  das versões anteriores são convertidos automaticamente na primeira abertura.
+- Removidos o placeholder `src/ai` (não usado) e o hook `use-local-storage`.
+
 ## [1.6.0] - 2026-09-13
 
 ### Adicionado
@@ -117,6 +135,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.6.1]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.3.0...v1.4.0

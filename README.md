@@ -26,6 +26,12 @@ npm run dev
 npm run electron:dev
 ```
 
+## Testes
+
+```bash
+npm test
+```
+
 ## Como buildar
 
 ```bash
@@ -42,10 +48,11 @@ O instalador será gerado na pasta `dist/`.
 
 ```
 src/
-├── domain/          # Tipos e funções puras (layout, cores, operações em bloco, formato .engsched)
+├── domain/          # Tipos e funções puras (layout, cores, operações em bloco, validação, formato .engsched)
+├── application/     # Estado do projeto (reducer), autosave e hook useProject
 ├── infrastructure/  # Adapters de I/O (salvar/abrir arquivo no navegador e no Electron)
 ├── components/      # Componentes React do app + ui/ (shadcn)
-├── hooks/           # Custom hooks (localStorage, toast)
+├── hooks/           # Hooks de UI (seleção múltipla, toast)
 ├── lib/             # Utilitário `cn` do shadcn
 └── app/             # Páginas e layout Next.js
 electron/            # Processo principal do Electron
@@ -73,7 +80,7 @@ public/              # Assets estáticos
 
 ## Arquitetura
 
-Avaliação sobre refatorar com DDD / Arquitetura Limpa e o plano incremental recomendado: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
+Camadas, regra de dependência e como adicionar funcionalidades: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
 ## Versionamento
 
