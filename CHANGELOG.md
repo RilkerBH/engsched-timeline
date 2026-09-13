@@ -9,6 +9,21 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.0.1] - 2026-09-13
+
+### Corrigido
+
+- O script `electron:build` passa a forçar `--x64`. Em Macs Apple Silicon o
+  electron-builder gerava um executável ARM64 que não abre em PCs Windows
+  comuns ("Este aplicativo não pode ser executado em seu PC").
+
+### Adicionado
+
+- Workflow *Build Windows*: gera o `.zip` e o `.exe` portátil num runner
+  Windows, manualmente ou ao publicar uma Release (anexa os arquivos a ela).
+- Script `electron:build:portable` (para builds feitos no próprio Windows).
+- Skill `web-to-exe` versionada em `.claude/skills/`.
+
 ## [2.0.0] - 2026-09-13
 
 ### Alterado (incompatível)
@@ -171,6 +186,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[2.0.1]: https://github.com/RilkerBH/engsched-timeline/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.7.0...v2.0.0
 [1.7.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.0...v1.6.1

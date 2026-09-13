@@ -1,6 +1,6 @@
 {
   "name": "engsched-timeline",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
@@ -11,8 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "electron:dev": "next build && electron .",
-    "electron:build": "next build && electron-builder --win",
-    "electron:build:mac": "next build && electron-builder --mac"
+    "electron:build": "next build && electron-builder --win --x64",
+    "electron:build:mac": "next build && electron-builder --mac",
+    "electron:build:portable": "next build && electron-builder --win portable --x64"
   },
   "build": {
     "appId": "com.engsched.timeline",
