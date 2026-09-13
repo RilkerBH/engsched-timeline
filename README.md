@@ -56,11 +56,17 @@ public/             # Assets estáticos
 - Configuração de período do projeto (data início/fim)
 - Pacotes de serviço com cores, datas e posicionamento customizável
 - Marcos (milestones) na timeline
+- Seletor de cores estilo Excel (cores do tema, cores padrão e código hexadecimal)
+- Seleção múltipla (clique, Ctrl+clique, Shift+clique) com edição em bloco: cor, formato de data, mover como bloco, deslocar datas, excluir
 - Drag and drop para reordenar pacotes
 - Zoom na timeline
 - Exportação como imagem PNG
-- Salvar/carregar projetos (arquivo `.engsched`)
+- Salvar/carregar projetos (arquivo `.engsched`), inclusive a partir da tela inicial
 - Funciona no navegador e como app desktop
+
+## Arquitetura
+
+Avaliação sobre refatorar com DDD / Arquitetura Limpa e o plano incremental recomendado: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
 ## Versionamento
 
