@@ -102,7 +102,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">{defaultValues ? "Editar" : "Novo"} Pacote de Serviço</DialogTitle>
+          <DialogTitle className="font-headline">{defaultValues ? "Editar" : "Nova"} Tarefa</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => handleSubmit(data))} className="space-y-4">
@@ -111,7 +111,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Pacote</FormLabel>
+                  <FormLabel>Nome da Tarefa</FormLabel>
                   <FormControl>
                     <Textarea {...field} />
                   </FormControl>

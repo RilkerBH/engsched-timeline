@@ -4,26 +4,29 @@ import {
   eachMonthOfInterval,
   endOfMonth,
   format,
-  addDays,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 /**
  * Timeline geometry: converts dates into percentages of the project range.
  * Pure functions, no DOM.
+ *
+ * End dates are INCLUSIVE everywhere: a project from Jan 1 to Dec 31 spans
+ * 365 days, a task from Mar 1 to Mar 1 spans 1 day, and the month headers add
+ * up to exactly 100%. A milestone sits at the start of its day.
  */
 
-export function getPositionAndWidth(itemStartDateStr: string, itemEndDateStr: string, projectStartDateStr: string, projectEndDateStr: string) {
-  const projectStart = parseISO(projectStartDateStr);
-  const projectEnd = parseISO(projectEndDateStr);
-  const itemStart = parseISO(itemStartDateStr);
-  const itemEnd = parseISO(itemEndDateStr);
+/** Number of calendar days between two ISO dates, counting both ends. */
+export function inclusiveDays(startDateStr: string, endDateStr: string): number {
+  return differenceInDays(parseISO(endDateStr), parseISO(startDateStr)) + 1;
+}
 
-  const totalProjectDays = differenceInDays(projectEnd, projectStart);
+export function getPositionAndWidth(itemStartDateStr: string, itemEndDateStr: string, projectStartDateStr: string, projectEndDateStr: string) {
+  const totalProjectDays = inclusiveDays(projectStartDateStr, projectEndDateStr);
   if (totalProjectDays <= 0) return { left: 0, width: 0 };
 
-  const startOffsetDays = differenceInDays(itemStart, projectStart);
-  const itemDurationDays = differenceInDays(itemEnd, itemStart);
+  const startOffsetDays = differenceInDays(parseISO(itemStartDateStr), parseISO(projectStartDateStr));
+  const itemDurationDays = inclusiveDays(itemStartDateStr, itemEndDateStr);
 
   const left = (startOffsetDays / totalProjectDays) * 100;
   const width = (itemDurationDays / totalProjectDays) * 100;
@@ -32,14 +35,10 @@ export function getPositionAndWidth(itemStartDateStr: string, itemEndDateStr: st
 }
 
 export function getMilestonePosition(milestoneDateStr: string, projectStartDateStr: string, projectEndDateStr: string) {
-  const projectStart = parseISO(projectStartDateStr);
-  const projectEnd = parseISO(projectEndDateStr);
-  const milestoneDate = parseISO(milestoneDateStr);
-
-  const totalProjectDays = differenceInDays(projectEnd, projectStart);
+  const totalProjectDays = inclusiveDays(projectStartDateStr, projectEndDateStr);
   if (totalProjectDays <= 0) return 0;
 
-  const startOffsetDays = differenceInDays(milestoneDate, projectStart);
+  const startOffsetDays = differenceInDays(parseISO(milestoneDateStr), parseISO(projectStartDateStr));
 
   return (startOffsetDays / totalProjectDays) * 100;
 }
@@ -49,16 +48,15 @@ export function getMonthHeaders(projectStartDateStr: string, projectEndDateStr: 
   const projectEnd = parseISO(projectEndDateStr);
 
   const months = eachMonthOfInterval({ start: projectStart, end: projectEnd });
-  const totalProjectDays = differenceInDays(projectEnd, projectStart);
+  const totalProjectDays = inclusiveDays(projectStartDateStr, projectEndDateStr);
 
   return months.map(monthStart => {
     const monthEnd = endOfMonth(monthStart);
 
     const effectiveStart = projectStart > monthStart ? projectStart : monthStart;
-    let effectiveEnd = projectEnd < monthEnd ? projectEnd : monthEnd;
-    effectiveEnd = addDays(effectiveEnd, 1); // differenceInDays is exclusive of the end date
+    const effectiveEnd = projectEnd < monthEnd ? projectEnd : monthEnd;
 
-    const daysInMonth = differenceInDays(effectiveEnd, effectiveStart);
+    const daysInMonth = differenceInDays(effectiveEnd, effectiveStart) + 1; // both ends inclusive
 
     const width = (daysInMonth / totalProjectDays) * 100;
 

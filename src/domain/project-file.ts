@@ -49,7 +49,7 @@ export function deserializeProject(json: string): ProjectFile {
   }
 
   if (!Array.isArray(data.servicePackages)) {
-    throw new Error("Arquivo de projeto inválido: pacotes de serviço ausentes.");
+    throw new Error("Arquivo de projeto inválido: tarefas ausentes.");
   }
 
   if (!Array.isArray(data.milestones)) {

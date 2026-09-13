@@ -12,7 +12,7 @@ describe("serialize / deserialize", () => {
 
   it("rejects files without a version or with a corrupt structure", () => {
     expect(() => deserializeProject("{}")).toThrow(/versão ausente/);
-    expect(() => deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: "x", milestones: [] }))).toThrow(/pacotes/);
+    expect(() => deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: "x", milestones: [] }))).toThrow(/tarefas/);
     expect(() => deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: [], milestones: null }))).toThrow(/marcos/);
     expect(() => deserializeProject("not json")).toThrow();
   });

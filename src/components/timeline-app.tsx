@@ -57,7 +57,7 @@ export default function TimelineApp() {
     project.configureProject(data)
     toast({
       title: isEditing ? "Projeto Atualizado!" : "Projeto Criado!",
-      description: isEditing ? "As configurações do projeto foram salvas." : "Você pode agora adicionar pacotes e marcos.",
+      description: isEditing ? "As configurações do projeto foram salvas." : "Você pode agora adicionar tarefas e marcos.",
     })
   }
 
@@ -123,12 +123,12 @@ export default function TimelineApp() {
   const handlePackageSubmit = (data: ServicePackageData) => {
     const exists = packages.some(p => p.id === data.id)
     project.savePackage(data)
-    toast({ title: exists ? "Pacote Atualizado" : "Pacote Criado" })
+    toast({ title: exists ? "Tarefa Atualizada" : "Tarefa Criada" })
   }
 
   const handleDeletePackage = (id: string) => {
     project.deletePackage(id)
-    toast({ title: "Pacote Deletado", variant: "destructive" })
+    toast({ title: "Tarefa Excluída", variant: "destructive" })
   }
 
   const handleMilestoneSubmit = (data: MilestoneData) => {

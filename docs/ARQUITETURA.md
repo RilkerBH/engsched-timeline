@@ -71,8 +71,11 @@ npm run test:watch
 
 Cobrem `domain/` e `application/` por completo. A interface é validada manualmente e por scripts Playwright mantidos fora do repositório.
 
+## Linguagem ubíqua
+
+O termo de negócio é **Tarefa** (antes "Pacote de serviço"). A interface já usa "Tarefa". No código os identificadores ainda são `ServicePackage*` e a chave do arquivo `.engsched` é `servicePackages`; alinhar o código ao termo (`Task*`, chave `tasks` com migração do formato para 1.2) é uma refatoração mecânica pendente, a fazer numa versão própria.
+
 ## Próximos passos possíveis
 
 - **Undo/Redo**: com estado único e reducer, basta guardar uma pilha de estados anteriores no `useProject` (cerca de 1 h de trabalho).
 - **ESLint**: o projeto não tem configuração de lint. `next lint` com a base recomendada seria suficiente.
-- **Cabeçalho de meses**: `getMonthHeaders` soma 1 dia a mais que `getPositionAndWidth` (fim inclusivo vs. exclusivo), o que faz a soma das larguras passar ligeiramente de 100%. Correção pequena, mas altera o visual, então merece uma versão própria.

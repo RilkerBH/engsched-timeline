@@ -19,7 +19,7 @@ export function TimelineControls({ onExport, onReset, onAddPackage, onAddMilesto
       <div className="flex items-center gap-2">
          <Button onClick={onAddPackage} size="sm">
           <PlusCircle className="mr-2 h-4 w-4" />
-          Novo Pacote
+          Nova Tarefa
         </Button>
         <Button onClick={onAddMilestone} size="sm" variant="outline">
           <Milestone className="mr-2 h-4 w-4" />

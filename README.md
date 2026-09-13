@@ -62,12 +62,12 @@ public/              # Assets estáticos
 ## Funcionalidades
 
 - Configuração de período do projeto (data início/fim)
-- Pacotes de serviço com cores, datas e posicionamento customizável
+- Tarefas (pacotes de serviço) com cores, datas e posicionamento customizável
 - Marcos (milestones) na timeline
 - Seletor de cores estilo Excel (cores do tema, cores padrão e código hexadecimal)
-- Seleção múltipla (clique, Ctrl+clique, Shift+clique) com edição em bloco: cor, formato de data, mover como bloco, deslocar datas, excluir
+- Seleção múltipla de tarefas e marcos (clique, Ctrl+clique, Shift+clique) com edição em bloco: cor, formato de data, mover como bloco, deslocar datas, excluir
 - Rótulos de nome e data em posição padrão alinhada, com ajuste fino por arrastar e opção de redefinir
-- Drag and drop para reordenar pacotes
+- Drag and drop para reordenar tarefas
 - Exportação como imagem PNG
 - Salvar/carregar projetos (arquivo `.engsched`), inclusive a partir da tela inicial
 - Funciona no navegador e como app desktop

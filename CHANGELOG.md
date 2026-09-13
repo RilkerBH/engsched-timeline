@@ -9,6 +9,23 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.7.0] - 2026-09-13
+
+### Alterado
+
+- "Pacote de serviço" passa a se chamar "Tarefa" em toda a interface
+  (botão "Nova Tarefa", formulário, mensagens e barra de seleção). O
+  formato do arquivo `.engsched` não muda.
+
+### Corrigido
+
+- Cabeçalho de meses e barras agora usam o mesmo modelo de datas, com o
+  dia final incluído. Antes, os meses somavam um dia a mais que as barras e
+  o cabeçalho passava ligeiramente de 100% da largura. Efeitos visíveis:
+  os meses somam exatamente 100%, cada barra fica um dia mais larga (uma
+  tarefa de um único dia, que antes tinha largura zero, agora aparece), e
+  barras de tarefas consecutivas se encostam sem sobrepor.
+
 ## [1.6.1] - 2026-09-13
 
 ### Interno
@@ -135,6 +152,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.7.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.4.0...v1.5.0

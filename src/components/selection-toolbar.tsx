@@ -46,7 +46,7 @@ export function SelectionToolbar({
   const allSelected = nPk === totalPackages && nMs === totalMilestones
 
   const summary = [
-    nPk > 0 ? `${nPk} pacote${nPk > 1 ? "s" : ""}` : null,
+    nPk > 0 ? `${nPk} tarefa${nPk > 1 ? "s" : ""}` : null,
     nMs > 0 ? `${nMs} marco${nMs > 1 ? "s" : ""}` : null,
   ].filter(Boolean).join(" e ")
 
@@ -60,7 +60,7 @@ export function SelectionToolbar({
     <div className="flex flex-wrap items-center gap-3 border border-primary/40 bg-primary/5 px-4 py-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
         <CheckSquare className="h-4 w-4 text-primary" />
-        <span>{summary} selecionado{nPk + nMs > 1 ? "s" : ""}</span>
+        <span>{summary} selecionad{nMs > 0 ? "o" : "a"}{nPk + nMs > 1 ? "s" : ""}</span>
       </div>
 
       <div className="h-5 w-px bg-border" />
