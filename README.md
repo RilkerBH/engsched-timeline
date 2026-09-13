@@ -38,7 +38,7 @@ Três formas de gerar, da mais simples para a mais manual:
 
 1. **Pela Release no GitHub (recomendado).** Ao publicar uma Release (workflow *Release*), o workflow *Build Windows* roda num runner Windows e anexa à Release um `.zip` (pasta com o `.exe` e as DLLs) e um `.exe` portátil. Baixe no PC de destino, descompacte ou execute. Não precisa instalar nada.
 2. **Manualmente no GitHub.** Actions > *Build Windows* > *Run workflow*. O resultado fica em *Artifacts* da execução.
-3. **No Mac.** `npm run electron:build` gera `dist/win-unpacked/` (sempre com `--x64`, mesmo em Apple Silicon). Zipe a pasta e leve para o Windows. O alvo `portable` exige Wine no Mac, por isso só o workflow o gera.
+3. **No Mac.** `npm run electron:build` gera `dist/win-unpacked/` e o zip pronto para levar, `dist/EngSched-Timeline-vX.Y.Z-win-x64.zip` (sempre `--x64`, mesmo em Apple Silicon). O alvo `portable` exige Wine no Mac, por isso só o workflow o gera.
 
 O passo a passo completo, com as decisões de projeto e a solução dos problemas comuns, está na skill `.claude/skills/web-to-exe/SKILL.md`.
 

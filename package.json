@@ -28,7 +28,11 @@
       "!node_modules/**/*"
     ],
     "win": {
-      "target": "dir",
+      "target": [
+        "dir",
+        "zip"
+      ],
+      "artifactName": "EngSched-Timeline-v${version}-win-x64.${ext}",
       "icon": "public/icon.png"
     },
     "mac": {

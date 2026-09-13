@@ -212,6 +212,18 @@ Adicionar ao `package.json` existente:
 
 **Usar `dir`** quando o build é feito no Mac. O usuário zipa a pasta `win-unpacked/` e leva para o PC Windows.
 
+Para o zip sair pronto e com a versão no nome, adicione o target `zip` (não exige Wine) e um `artifactName`:
+
+```json
+"win": {
+  "target": ["dir", "zip"],
+  "artifactName": "${productName}-v${version}-win-x64.${ext}",
+  "icon": "public/icon.png"
+}
+```
+
+Gera `dist/App-Name-v1.2.3-win-x64.zip` ao lado de `win-unpacked/`.
+
 Se o build for feito no próprio Windows, `nsis` ou `portable` funcionam normalmente.
 
 ### Flag de arquitetura

@@ -25,6 +25,8 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 
 - Workflow *Build Windows*: gera o `.zip` e o `.exe` portátil num runner
   Windows, manualmente ou ao publicar uma Release (anexa os arquivos a ela).
+- `npm run electron:build` passa a gerar também o zip versionado
+  (`EngSched-Timeline-vX.Y.Z-win-x64.zip`) ao lado da pasta `win-unpacked/`.
 - Script `electron:build:portable` (para builds feitos no próprio Windows).
 - Skill `web-to-exe` versionada em `.claude/skills/`.
 
