@@ -9,6 +9,20 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.1.0] - 2026-09-13
+
+### Adicionado
+
+- Seletor de cores no estilo do Excel para pacotes de serviço e marcos:
+  60 cores do tema (10 cores-base com 5 variações), 10 cores padrão,
+  campo para digitar o código hexadecimal (`#RRGGBB`) e acesso ao seletor
+  de cores nativo do sistema ("Mais cores").
+
+### Alterado
+
+- A cor padrão de novos pacotes e marcos passou a ser o azul do tema (`#4472C4`).
+- O campo de cor agora valida o formato hexadecimal ao salvar.
+
 ## [1.0.0] - 2026-09-13
 
 Versão base do EngSched Timeline.
@@ -25,4 +39,5 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.1.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RilkerBH/engsched-timeline/releases/tag/v1.0.0

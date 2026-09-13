@@ -27,14 +27,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { MilestoneData } from "@/lib/types"
 import { useEffect } from "react"
 import { Trash2 } from "lucide-react"
+import { ColorPicker } from "@/components/color-picker"
+import { DEFAULT_COLOR, isValidHex } from "@/lib/colors"
 import { Switch } from "@/components/ui/switch"
 
-const COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#eab308", "#8b5cf6", "#f97316"];
 
 const formSchema = (projectStart: string, projectEnd: string) => z.object({
   name: z.string().min(1, "Name is required"),
   date: z.string(),
-  color: z.string(),
+  color: z.string().refine(isValidHex, "Cor inválida. Use o formato #RRGGBB."),
   height: z.number().min(20).max(60),
   preventNameLineBreak: z.boolean().optional(),
   dateFormat: z.enum(['dd/MM/yyyy', 'MMM/yy']).optional(),
@@ -58,7 +59,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
   const initialFormValues = {
     name: "",
     date: projectSettings.startDate,
-    color: COLORS[0],
+    color: DEFAULT_COLOR,
     height: 30,
     labelOffsetX: 0,
     labelOffsetY: -10,
@@ -179,24 +180,10 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
               render={({ field }) => (
                   <FormItem>
                       <FormLabel>Color</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                              <SelectTrigger>
-                                  <SelectValue placeholder="Select a color" />
-                              </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                              {COLORS.map(color => (
-                                  <SelectItem key={color} value={color}>
-                                      <div className="flex items-center gap-2">
-                                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
-                                          {color}
-                                      </div>
-                                  </SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                      <FormMessage />
+                    <FormControl>
+                      <ColorPicker value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
                   </FormItem>
               )}
             />

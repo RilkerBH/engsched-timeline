@@ -28,14 +28,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { ServicePackageData } from "@/lib/types"
 import { useEffect } from "react"
 import { Trash2 } from "lucide-react"
+import { ColorPicker } from "@/components/color-picker"
+import { DEFAULT_COLOR, isValidHex } from "@/lib/colors"
 
-const COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#eab308", "#8b5cf6", "#f97316"];
 
 const formSchema = (projectStart: string, projectEnd: string) => z.object({
   name: z.string().min(1, "Name is required"),
   startDate: z.string(),
   endDate: z.string(),
-  color: z.string(),
+  color: z.string().refine(isValidHex, "Cor inválida. Use o formato #RRGGBB."),
   height: z.number().min(16).max(80),
   showTextInside: z.boolean(),
   preventNameLineBreak: z.boolean().optional(),
@@ -68,7 +69,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
     name: "",
     startDate: projectSettings.startDate,
     endDate: projectSettings.endDate,
-    color: COLORS[0],
+    color: DEFAULT_COLOR,
     height: 32,
     showTextInside: false,
     labelOffsetX: 10,
@@ -205,24 +206,10 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>Color</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a color" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {COLORS.map(color => (
-                                    <SelectItem key={color} value={color}>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />
-                                            {color}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
+                    <FormControl>
+                      <ColorPicker value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
                     </FormItem>
                 )}
             />
