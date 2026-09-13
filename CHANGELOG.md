@@ -9,6 +9,13 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.3.0] - 2026-09-13
+
+### Adicionado
+
+- Botão "Abrir projeto existente (.engsched)" na tela inicial, permitindo
+  carregar um projeto salvo sem precisar criar um projeto novo antes.
+
 ## [1.2.0] - 2026-09-13
 
 ### Adicionado
@@ -53,6 +60,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.3.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RilkerBH/engsched-timeline/releases/tag/v1.0.0

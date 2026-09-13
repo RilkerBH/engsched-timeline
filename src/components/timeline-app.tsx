@@ -406,7 +406,7 @@ export default function TimelineApp() {
   }
 
   if (!projectSettings) {
-    return <ProjectSettingsForm onSubmit={handleProjectSettingsSubmit} />;
+    return <ProjectSettingsForm onSubmit={handleProjectSettingsSubmit} onLoadProject={handleLoadProject} />;
   }
   
   return (

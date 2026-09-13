@@ -13,7 +13,8 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { FolderOpen } from "lucide-react"
 import type { ProjectSettings } from "@/lib/types"
 
 const formSchema = z.object({
@@ -27,9 +28,10 @@ const formSchema = z.object({
 
 type ProjectSettingsFormProps = {
   onSubmit: (data: Omit<ProjectSettings, 'id'>) => void;
+  onLoadProject?: () => void;
 }
 
-export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
+export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettingsFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -94,6 +96,19 @@ export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
             </form>
           </Form>
         </CardContent>
+        {onLoadProject && (
+          <CardFooter className="flex flex-col gap-3 border-t pt-4">
+            <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              <span>ou</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <Button type="button" variant="outline" className="w-full" onClick={onLoadProject}>
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Abrir projeto existente (.engsched)
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </div>
   )
