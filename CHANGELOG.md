@@ -9,6 +9,20 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.2.0] - 2026-09-13
+
+### Adicionado
+
+- Seleção múltipla de pacotes e marcos direto na linha do tempo:
+  clique seleciona, Ctrl/Cmd+clique adiciona ou remove da seleção,
+  Shift+clique seleciona um intervalo de pacotes, Esc limpa a seleção.
+- Barra de ações em bloco para os itens selecionados:
+  alterar cor, alterar formato da data, mover pacotes como bloco (cima/baixo),
+  deslocar datas em N dias (adiantar/atrasar, respeitando o período do projeto),
+  nome dentro da barra, quebra de linha do nome, selecionar todos e excluir
+  (tecla Delete abre a confirmação).
+- Destaque visual dos itens selecionados (removido automaticamente na exportação PNG).
+
 ## [1.1.0] - 2026-09-13
 
 ### Adicionado
@@ -39,5 +53,6 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.2.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/RilkerBH/engsched-timeline/releases/tag/v1.0.0

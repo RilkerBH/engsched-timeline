@@ -13,9 +13,11 @@ type ServicePackageRowProps = {
   packageData: ServicePackageData & { left: number; width: number; top: number; }
   onDoubleClick: () => void
   onOrderChange: (direction: 'up' | 'down') => void
+  selected?: boolean
+  onSelect?: (event: React.MouseEvent) => void
 }
 
-export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange }: ServicePackageRowProps) {
+export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, selected = false, onSelect }: ServicePackageRowProps) {
   const nameDraggable = useDraggable({
     id: `name-package-${packageData.id}`,
     data: {
@@ -98,13 +100,18 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange }:
         height: `${packageData.height}px`,
       }}
       className="group z-20"
+      data-keep-selection
     >
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className="h-full w-full rounded-md shadow-md transition-all duration-150 flex items-center justify-center overflow-hidden"
+              className={cn(
+                "h-full w-full rounded-md shadow-md transition-all duration-150 flex items-center justify-center overflow-hidden cursor-pointer",
+                selected && "ring-2 ring-offset-2 ring-primary"
+              )}
               style={{ backgroundColor: packageData.color }}
+              onClick={(e) => onSelect?.(e)}
               onDoubleClick={onDoubleClick}
             >
               <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-0.5 z-10">

@@ -9,9 +9,11 @@ type TimelineHeaderProps = {
   projectSettings: ProjectSettings
   milestones: MilestoneData[]
   handleEditMilestone: (milestone: MilestoneData) => void;
+  selectedMilestoneIds?: string[];
+  onSelectMilestone?: (id: string, event: React.MouseEvent) => void;
 }
 
-export function TimelineHeader({ projectSettings, milestones, handleEditMilestone }: TimelineHeaderProps) {
+export function TimelineHeader({ projectSettings, milestones, handleEditMilestone, selectedMilestoneIds = [], onSelectMilestone }: TimelineHeaderProps) {
   const monthHeaders = getMonthHeaders(projectSettings.startDate, projectSettings.endDate)
   const milestonesWithPositions = milestones.map(m => ({
     ...m,
@@ -47,6 +49,8 @@ export function TimelineHeader({ projectSettings, milestones, handleEditMileston
             key={milestone.id} 
             milestone={milestone}
             onDoubleClick={() => handleEditMilestone(milestone)}
+            selected={selectedMilestoneIds.includes(milestone.id)}
+            onSelect={(e) => onSelectMilestone?.(milestone.id, e)}
           />
         ))}
       </div>

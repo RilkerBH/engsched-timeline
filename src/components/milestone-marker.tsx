@@ -9,9 +9,11 @@ import { useDraggable } from "@dnd-kit/core"
 type MilestoneMarkerProps = {
   milestone: MilestoneData & { position: number };
   onDoubleClick: () => void;
+  selected?: boolean;
+  onSelect?: (event: React.MouseEvent) => void;
 }
 
-export function MilestoneMarker({ milestone, onDoubleClick }: MilestoneMarkerProps) {
+export function MilestoneMarker({ milestone, onDoubleClick, selected = false, onSelect }: MilestoneMarkerProps) {
   const nameDraggable = useDraggable({
     id: `name-milestone-${milestone.id}`,
     data: {
@@ -66,16 +68,21 @@ export function MilestoneMarker({ milestone, onDoubleClick }: MilestoneMarkerPro
             className="absolute bottom-0 transition-all duration-150 hover:scale-110 z-30"
             style={{ left: `calc(${milestone.position}% - ${(milestone.height * 0.866) / 2}px)` }}
             onDoubleClick={onDoubleClick}
+            data-keep-selection
           >
             <svg 
               width={milestone.height * 0.866} 
               height={milestone.height} 
               viewBox={`0 0 ${milestone.height * 0.866} ${milestone.height}`}
-              style={{ display: 'block' }}
+              style={{ display: 'block', overflow: 'visible', cursor: 'pointer' }}
+              onClick={(e) => onSelect?.(e)}
             >
               <polygon 
                 points={`${(milestone.height * 0.866) / 2},0 0,${milestone.height} ${milestone.height * 0.866},${milestone.height}`}
-                fill={milestone.color} 
+                fill={milestone.color}
+                stroke={selected ? 'hsl(var(--primary))' : 'none'}
+                strokeWidth={selected ? 3 : 0}
+                strokeLinejoin="round"
               />
             </svg>
             <div 

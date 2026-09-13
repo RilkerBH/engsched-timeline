@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useMemo, useEffect } from "react"
+import { useState, useRef, useMemo, useEffect, useCallback } from "react"
 import { DndContext, type DragEndEvent } from "@dnd-kit/core"
 import { toPng } from "html-to-image"
 import { format, parseISO } from 'date-fns'
@@ -23,6 +23,18 @@ import { ServicePackageRow } from "./service-package-row"
 import { ServicePackageForm } from "./service-package-form"
 import { MilestoneForm } from "./milestone-form"
 import { getPositionAndWidth } from "@/lib/utils"
+import {
+  EMPTY_SELECTION,
+  type Selection,
+  selectionSize,
+  toggleId,
+  rangeSelectPackages,
+  movePackagesBlock,
+  applyPatch,
+  shiftPackageDates,
+  shiftMilestoneDates,
+} from "@/lib/bulk"
+import { SelectionToolbar } from "./selection-toolbar"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "./ui/skeleton"
@@ -37,6 +49,8 @@ export default function TimelineApp() {
   const [zoom, setZoom] = useState(100)
 
   const [isResetAlertOpen, setIsResetAlertOpen] = useState(false)
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false)
+  const [rawSelection, setRawSelection] = useState<Selection>(EMPTY_SELECTION)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
   const [editingPackage, setEditingPackage] = useState<ServicePackageData | undefined>(undefined)
   const [isPackageFormOpen, setIsPackageFormOpen] = useState(false)
@@ -67,7 +81,12 @@ export default function TimelineApp() {
     toast({ title: "Cronograma Resetado", description: "Todos os dados foram apagados." })
   }
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (selectionSize(rawSelection) > 0) {
+      // Remove o destaque de seleção antes de capturar a imagem
+      setRawSelection(EMPTY_SELECTION);
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
     if (exportableAreaRef.current) {
       const title = projectSettings?.title.replace(/\s+/g, '_') || 'timeline';
       const date = format(new Date(), 'yyyyMMdd_HHmm');
@@ -228,6 +247,127 @@ export default function TimelineApp() {
   };
 
 
+  // ----- Seleção múltipla / edição em bloco -----
+
+  // Mantém apenas ids que ainda existem (itens podem ter sido excluídos)
+  const selection = useMemo<Selection>(() => ({
+    packages: rawSelection.packages.filter(id => servicePackages.some(p => p.id === id)),
+    milestones: rawSelection.milestones.filter(id => milestones.some(m => m.id === id)),
+  }), [rawSelection, servicePackages, milestones]);
+  const hasSelection = selectionSize(selection) > 0;
+
+  const clearSelection = useCallback(() => setRawSelection(EMPTY_SELECTION), []);
+
+  const handleSelectPackage = (id: string, e: React.MouseEvent) => {
+    const multi = e.ctrlKey || e.metaKey;
+    setRawSelection(sel => {
+      if (e.shiftKey) {
+        return { ...sel, packages: rangeSelectPackages(servicePackages, sel.packages, id) };
+      }
+      if (multi) {
+        return { ...sel, packages: toggleId(sel.packages, id) };
+      }
+      const isOnlyOne = selectionSize(sel) === 1 && sel.packages[0] === id;
+      return isOnlyOne ? EMPTY_SELECTION : { packages: [id], milestones: [] };
+    });
+  };
+
+  const handleSelectMilestone = (id: string, e: React.MouseEvent) => {
+    const multi = e.ctrlKey || e.metaKey || e.shiftKey;
+    setRawSelection(sel => {
+      if (multi) {
+        return { ...sel, milestones: toggleId(sel.milestones, id) };
+      }
+      const isOnlyOne = selectionSize(sel) === 1 && sel.milestones[0] === id;
+      return isOnlyOne ? EMPTY_SELECTION : { packages: [], milestones: [id] };
+    });
+  };
+
+  const handleSelectAll = () => {
+    setRawSelection({
+      packages: servicePackages.map(p => p.id),
+      milestones: milestones.map(m => m.id),
+    });
+  };
+
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("[data-keep-selection]")) return;
+    if (hasSelection) clearSelection();
+  };
+
+  const handleBulkColor = (color: string) => {
+    if (selection.packages.length) setServicePackages(applyPatch(servicePackages, selection.packages, { color }));
+    if (selection.milestones.length) setMilestones(applyPatch(milestones, selection.milestones, { color }));
+    toast({ title: "Cor aplicada", description: `${selectionSize(selection)} item(ns) atualizado(s).` });
+  };
+
+  const handleBulkDateFormat = (dateFormat: 'dd/MM/yyyy' | 'MMM/yy') => {
+    if (selection.packages.length) setServicePackages(applyPatch(servicePackages, selection.packages, { dateFormat }));
+    if (selection.milestones.length) setMilestones(applyPatch(milestones, selection.milestones, { dateFormat }));
+    toast({ title: "Formato de data aplicado", description: `${selectionSize(selection)} item(ns) atualizado(s).` });
+  };
+
+  const handleBulkMove = (direction: 'up' | 'down') => {
+    setServicePackages(movePackagesBlock(servicePackages, selection.packages, direction));
+  };
+
+  const handleBulkShiftDates = (days: number) => {
+    if (!projectSettings) return;
+    const pk = shiftPackageDates(servicePackages, selection.packages, days, projectSettings.startDate, projectSettings.endDate);
+    const ms = shiftMilestoneDates(milestones, selection.milestones, days, projectSettings.startDate, projectSettings.endDate);
+    setServicePackages(pk.items);
+    setMilestones(ms.items);
+    const skipped = pk.outOfRange.length + ms.outOfRange.length;
+    const moved = selectionSize(selection) - skipped;
+    const label = days > 0 ? `atrasado(s) ${days} dia(s)` : `adiantado(s) ${-days} dia(s)`;
+    if (skipped > 0) {
+      toast({
+        variant: "destructive",
+        title: "Deslocamento parcial",
+        description: `${moved} item(ns) ${label}. ${skipped} item(ns) sairia(m) do período do projeto e não foi/foram alterado(s).`,
+      });
+    } else {
+      toast({ title: "Datas deslocadas", description: `${moved} item(ns) ${label}.` });
+    }
+  };
+
+  const handleBulkShowTextInside = (showTextInside: boolean) => {
+    setServicePackages(applyPatch(servicePackages, selection.packages, { showTextInside }));
+  };
+
+  const handleBulkPreventLineBreak = (preventNameLineBreak: boolean) => {
+    setServicePackages(applyPatch(servicePackages, selection.packages, { preventNameLineBreak }));
+    setMilestones(applyPatch(milestones, selection.milestones, { preventNameLineBreak }));
+  };
+
+  const handleBulkDelete = () => {
+    const pkSet = new Set(selection.packages);
+    const msSet = new Set(selection.milestones);
+    const total = selectionSize(selection);
+    setServicePackages(servicePackages.filter(p => !pkSet.has(p.id)));
+    setMilestones(milestones.filter(m => !msSet.has(m.id)));
+    clearSelection();
+    setIsBulkDeleteAlertOpen(false);
+    toast({ title: "Itens excluídos", description: `${total} item(ns) removido(s).`, variant: "destructive" });
+  };
+
+  // Atalhos: Esc limpa a seleção; Delete abre a confirmação de exclusão
+  useEffect(() => {
+    if (!hasSelection) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing = target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      if (e.key === "Escape") {
+        clearSelection();
+      } else if ((e.key === "Delete" || e.key === "Backspace") && !typing) {
+        e.preventDefault();
+        setIsBulkDeleteAlertOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [hasSelection, clearSelection]);
+
   const packagesWithPositions = useMemo(() => {
     if (!projectSettings) return [];
     
@@ -271,7 +411,7 @@ export default function TimelineApp() {
   
   return (
     <div className="p-4 md:p-8">
-      <div ref={exportableAreaRef} className="w-full overflow-x-auto py-4 bg-white">
+      <div ref={exportableAreaRef} className="w-full overflow-x-auto py-4 bg-white" onClick={handleBackgroundClick}>
         <div style={{ width: `${zoom}%`, minWidth: '100%' }}>
           <DndContext onDragEnd={handleLabelDragEnd}>
             <div className="w-full px-[5%]">
@@ -285,6 +425,8 @@ export default function TimelineApp() {
                   setEditingMilestone(milestone);
                   setIsMilestoneFormOpen(true);
                 }}
+                selectedMilestoneIds={selection.milestones}
+                onSelectMilestone={handleSelectMilestone}
               />
               <div ref={timelineContainerRef} className="relative" style={{ height: `${timelineContainerHeight}px` }}>
                 {packagesWithPositions.map(pkg => (
@@ -296,6 +438,8 @@ export default function TimelineApp() {
                       setIsPackageFormOpen(true);
                     }}
                     onOrderChange={(dir) => handleOrderChange(pkg.id, dir)}
+                    selected={selection.packages.includes(pkg.id)}
+                    onSelect={(e) => handleSelectPackage(pkg.id, e)}
                   />
                 ))}
               </div>
@@ -303,6 +447,23 @@ export default function TimelineApp() {
           </DndContext>
         </div>
       </div>
+
+      {hasSelection && (
+        <SelectionToolbar
+          selection={selection}
+          totalPackages={servicePackages.length}
+          totalMilestones={milestones.length}
+          onClear={clearSelection}
+          onSelectAll={handleSelectAll}
+          onColor={handleBulkColor}
+          onDateFormat={handleBulkDateFormat}
+          onMove={handleBulkMove}
+          onShiftDates={handleBulkShiftDates}
+          onShowTextInside={handleBulkShowTextInside}
+          onPreventLineBreak={handleBulkPreventLineBreak}
+          onDelete={() => setIsBulkDeleteAlertOpen(true)}
+        />
+      )}
 
       <TimelineControls
         zoom={zoom}
@@ -344,6 +505,21 @@ export default function TimelineApp() {
             defaultValues={editingMilestone}
         />
       )}
+
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir itens selecionados?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectionSize(selection)} item(ns) será(ão) removido(s) do cronograma. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={isResetAlertOpen} onOpenChange={setIsResetAlertOpen}>
         <AlertDialogContent>
