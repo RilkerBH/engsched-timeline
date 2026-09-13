@@ -1,6 +1,12 @@
 import type { ProjectFile, ProjectSettings, ServicePackageData, MilestoneData } from "./types";
+import { migrateMilestoneLabelOffsets, migratePackageLabelOffsets } from "./label-layout";
 
-const PROJECT_FILE_VERSION = "1.0";
+/**
+ * Versão do formato do arquivo .engsched.
+ * 1.0 - formato original (até a v1.3.0 do app)
+ * 1.1 - offsets dos rótulos passam a ser ajustes sobre a posição padrão (v1.4.0)
+ */
+const PROJECT_FILE_VERSION = "1.1";
 const FILE_EXTENSION = ".engsched";
 
 /**
@@ -59,14 +65,29 @@ export function deserializeProject(json: string): ProjectFile {
     throw new Error("Arquivo de projeto inválido: marcos ausentes.");
   }
 
-  return {
+  return migrateProjectFile({
     version: data.version,
     exportedAt: data.exportedAt || new Date().toISOString(),
     projectSettings: data.projectSettings ?? null,
     servicePackages: data.servicePackages,
     milestones: data.milestones,
     zoom: typeof data.zoom === "number" ? data.zoom : 100,
-  };
+  });
+}
+
+/**
+ * Converte um arquivo de versão antiga para a versão atual.
+ * Arquivos já na versão atual são devolvidos sem alteração.
+ */
+export function migrateProjectFile(file: ProjectFile): ProjectFile {
+  if (file.version === PROJECT_FILE_VERSION) return file;
+
+  let { servicePackages, milestones } = file;
+  if (file.version === "1.0") {
+    servicePackages = servicePackages.map(migratePackageLabelOffsets);
+    milestones = milestones.map(migrateMilestoneLabelOffsets);
+  }
+  return { ...file, version: PROJECT_FILE_VERSION, servicePackages, milestones };
 }
 
 /**

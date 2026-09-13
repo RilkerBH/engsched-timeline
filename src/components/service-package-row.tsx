@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { LABEL_LAYOUT } from "@/lib/label-layout"
 
 type ServicePackageRowProps = {
   packageData: ServicePackageData & { left: number; width: number; top: number; }
@@ -61,32 +62,38 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
     zIndex: dateDraggable.transform ? 1000 : undefined,
   };
 
+  const offX = packageData.labelOffsetX || 0;
+  const offY = packageData.labelOffsetY || 0;
+  const dOffX = packageData.dateLabelOffsetX || 0;
+  const dOffY = packageData.dateLabelOffsetY || 0;
+
   if (packageData.showTextInside) {
-    // Name inside
+    const { dateBelowBar } = LABEL_LAYOUT.package.inside;
+    // Nome centralizado dentro da barra
     nameLabelStyle.top = `50%`;
     nameLabelStyle.left = `50%`;
-    nameLabelStyle.transform = `translate(calc(-50% + ${packageData.labelOffsetX}px), calc(-50% + ${packageData.labelOffsetY}px)) ${nameDndTransform}`;
+    nameLabelStyle.transform = `translate(calc(-50% + ${offX}px), calc(-50% + ${offY}px)) ${nameDndTransform}`;
     nameLabelStyle.textAlign = 'center';
     nameLabelStyle.width = `calc(100% - 16px)`;
-    
-    // Date outside (below)
-    dateLabelStyle.top = `calc(100% + ${packageData.dateLabelOffsetY || 0}px + 4px)`;
-    dateLabelStyle.left = `calc(50% + ${packageData.dateLabelOffsetX || 0}px)`;
+
+    // Data centralizada logo abaixo da barra
+    dateLabelStyle.top = `calc(100% + ${dateBelowBar + dOffY}px)`;
+    dateLabelStyle.left = `calc(50% + ${dOffX}px)`;
     dateLabelStyle.transform = `translateX(-50%) ${dateDndTransform}`;
     dateLabelStyle.textAlign = 'center';
   } else {
-    // Both name and date outside (to the right)
-    // Name
+    const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.package.outside;
+    // Nome à direita da barra, com a base do texto logo acima do centro vertical
     nameLabelStyle.top = `50%`;
-    nameLabelStyle.left = `calc(100% + ${packageData.labelOffsetX || 0}px)`;
-    nameLabelStyle.transform = `translateY(calc(-100% + ${packageData.labelOffsetY || 0}px)) ${nameDndTransform}`;
+    nameLabelStyle.left = `calc(100% + ${gapX + offX}px)`;
+    nameLabelStyle.transform = `translateY(calc(-100% + ${offY - nameAboveCenter}px)) ${nameDndTransform}`;
     nameLabelStyle.textAlign = 'left';
     nameLabelStyle.width = 'max-content';
 
-    // Date
+    // Data à direita da barra, alinhada ao nome, logo abaixo do centro vertical
     dateLabelStyle.top = `50%`;
-    dateLabelStyle.left = `calc(100% + ${packageData.dateLabelOffsetX || 0}px)`;
-    dateLabelStyle.transform = `translateY(${packageData.dateLabelOffsetY || 0}px) ${dateDndTransform}`;
+    dateLabelStyle.left = `calc(100% + ${gapX + dOffX}px)`;
+    dateLabelStyle.transform = `translateY(${dateBelowCenter + dOffY}px) ${dateDndTransform}`;
     dateLabelStyle.textAlign = 'left';
   }
 
@@ -140,7 +147,7 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
           onDoubleClick();
         }}
         className={cn(
-          "text-xs font-medium cursor-grab active:cursor-grabbing p-2",
+          "text-xs font-medium leading-4 cursor-grab active:cursor-grabbing",
           packageData.showTextInside ? "text-white" : "text-foreground"
         )}
         style={nameLabelStyle}
@@ -152,7 +159,7 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
         ref={dateDraggable.setNodeRef}
         {...dateDraggable.listeners}
         {...dateDraggable.attributes}
-        className="text-xs text-foreground/60 cursor-grab active:cursor-grabbing"
+        className="text-xs leading-4 text-foreground/60 cursor-grab active:cursor-grabbing"
         style={dateLabelStyle}
       >
         {formattedDateRange}

@@ -9,6 +9,41 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.4.0] - 2026-09-13
+
+### Alterado
+
+- Nome e data de pacotes e marcos passam a nascer em posições padrão alinhadas,
+  sem precisar de ajuste com o mouse:
+  - Pacote com nome fora: nome e data à direita da barra, alinhados na mesma
+    coluna (8px da barra), empilhados no centro vertical da barra.
+  - Pacote com nome dentro: nome centralizado na barra e data centralizada
+    2px abaixo da barra.
+  - Marco: data 2px acima do triângulo e nome logo acima da data (antes a
+    data ficava sobreposta ao triângulo).
+- Os deslocamentos dos rótulos (`labelOffset*`) agora representam apenas o
+  ajuste manual sobre a posição padrão, e valem 0 por padrão. Arrastar com o
+  mouse continua funcionando.
+
+### Adicionado
+
+- Botão "Redefinir textos" no formulário de edição de pacote e de marco (aparece
+  quando há ajuste manual) e ação "Redefinir posição dos textos" no menu "Mais"
+  da barra de seleção múltipla.
+
+### Corrigido
+
+- Um rótulo arrastado para exatamente a posição 0 voltava ao padrão antigo ao
+  editar o item.
+- Nome dentro da barra nascia 10px fora do centro.
+
+### Migração
+
+- O formato do arquivo `.engsched` passa para a versão `1.1`. Arquivos `1.0`
+  são convertidos ao abrir: rótulos que estavam no padrão antigo vão para o
+  novo padrão; rótulos ajustados manualmente mantêm a mesma posição na tela.
+  O mesmo vale para os dados salvos no navegador (migração única).
+
 ## [1.3.0] - 2026-09-13
 
 ### Adicionado
@@ -60,6 +95,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.4.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.0.0...v1.1.0

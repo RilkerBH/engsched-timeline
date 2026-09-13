@@ -26,9 +26,10 @@ import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { MilestoneData } from "@/lib/types"
 import { useEffect } from "react"
-import { Trash2 } from "lucide-react"
+import { RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
 import { DEFAULT_COLOR, isValidHex } from "@/lib/colors"
+import { ZERO_OFFSETS } from "@/lib/label-layout"
 import { Switch } from "@/components/ui/switch"
 
 
@@ -61,10 +62,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
     date: projectSettings.startDate,
     color: DEFAULT_COLOR,
     height: 30,
-    labelOffsetX: 0,
-    labelOffsetY: -10,
-    dateLabelOffsetX: 0,
-    dateLabelOffsetY: 15,
+    ...ZERO_OFFSETS,
     preventNameLineBreak: false,
     dateFormat: 'dd/MM/yyyy' as const,
   };
@@ -86,19 +84,24 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
     });
   }, [defaultValues, form, projectSettings.startDate]);
 
-  const handleSubmit = (data: z.infer<typeof dynamicSchema>) => {
+  const handleSubmit = (data: z.infer<typeof dynamicSchema>, resetOffsets = false) => {
     onSubmit({
       ...defaultValues,
       ...data,
       id: defaultValues?.id || crypto.randomUUID(),
-      // Keep existing offsets if not in form
-      labelOffsetX: defaultValues?.labelOffsetX || initialFormValues.labelOffsetX,
-      labelOffsetY: defaultValues?.labelOffsetY || initialFormValues.labelOffsetY,
-      dateLabelOffsetX: defaultValues?.dateLabelOffsetX || initialFormValues.dateLabelOffsetX,
-      dateLabelOffsetY: defaultValues?.dateLabelOffsetY || initialFormValues.dateLabelOffsetY,
+      // Mantém os ajustes manuais de posição dos textos (ou zera se pedido)
+      labelOffsetX: resetOffsets ? 0 : (defaultValues?.labelOffsetX ?? 0),
+      labelOffsetY: resetOffsets ? 0 : (defaultValues?.labelOffsetY ?? 0),
+      dateLabelOffsetX: resetOffsets ? 0 : (defaultValues?.dateLabelOffsetX ?? 0),
+      dateLabelOffsetY: resetOffsets ? 0 : (defaultValues?.dateLabelOffsetY ?? 0),
     })
     onClose();
   }
+
+  const hasCustomOffsets = !!defaultValues && (
+    (defaultValues.labelOffsetX || 0) !== 0 || (defaultValues.labelOffsetY || 0) !== 0 ||
+    (defaultValues.dateLabelOffsetX || 0) !== 0 || (defaultValues.dateLabelOffsetY || 0) !== 0
+  );
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -107,7 +110,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
           <DialogTitle className="font-headline">{defaultValues ? "Edit" : "Create"} Milestone</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit((data) => handleSubmit(data))} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -206,10 +209,22 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
               )}
             />
             <DialogFooter className="sm:justify-between pt-4 border-t">
-              <div>
+              <div className="flex items-center gap-2">
                 {defaultValues && onDelete && (
                   <Button type="button" variant="destructive" size="icon" onClick={() => { onDelete(defaultValues.id); onClose(); }}>
                     <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+                {hasCustomOffsets && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    title="Volta nome e data para a posição padrão"
+                    onClick={form.handleSubmit((data) => handleSubmit(data, true))}
+                  >
+                    <RotateCcw className="mr-1 h-4 w-4" />
+                    Redefinir textos
                   </Button>
                 )}
               </div>

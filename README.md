@@ -58,6 +58,7 @@ public/             # Assets estáticos
 - Marcos (milestones) na timeline
 - Seletor de cores estilo Excel (cores do tema, cores padrão e código hexadecimal)
 - Seleção múltipla (clique, Ctrl+clique, Shift+clique) com edição em bloco: cor, formato de data, mover como bloco, deslocar datas, excluir
+- Rótulos de nome e data em posição padrão alinhada, com ajuste fino por arrastar e opção de redefinir
 - Drag and drop para reordenar pacotes
 - Zoom na timeline
 - Exportação como imagem PNG

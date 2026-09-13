@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowDown, ArrowUp, CalendarClock, CheckSquare, ChevronDown, Trash2, X } from "lucide-react"
+import { ArrowDown, ArrowUp, CalendarClock, CheckSquare, ChevronDown, RotateCcw, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -30,13 +30,14 @@ type SelectionToolbarProps = {
   onShiftDates: (days: number) => void
   onShowTextInside: (value: boolean) => void
   onPreventLineBreak: (value: boolean) => void
+  onResetLabels: () => void
   onDelete: () => void
 }
 
 export function SelectionToolbar({
   selection, totalPackages, totalMilestones,
   onClear, onSelectAll, onColor, onDateFormat, onMove, onShiftDates,
-  onShowTextInside, onPreventLineBreak, onDelete,
+  onShowTextInside, onPreventLineBreak, onResetLabels, onDelete,
 }: SelectionToolbarProps) {
   const [shiftDays, setShiftDays] = useState("7")
   const nPk = selection.packages.length
@@ -114,24 +115,30 @@ export function SelectionToolbar({
         </div>
       )}
 
-      {hasPackages && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8">
-              Mais <ChevronDown className="ml-1 h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuLabel>Nome dentro da barra</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onShowTextInside(true)}>Ativar</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onShowTextInside(false)}>Desativar</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Quebra de linha do nome</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onPreventLineBreak(false)}>Permitir</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onPreventLineBreak(true)}>Impedir</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="h-8">
+            Mais <ChevronDown className="ml-1 h-3 w-3" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={onResetLabels}>
+            <RotateCcw className="mr-2 h-4 w-4" /> Redefinir posição dos textos
+          </DropdownMenuItem>
+          {hasPackages && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Nome dentro da barra</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onShowTextInside(true)}>Ativar</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onShowTextInside(false)}>Desativar</DropdownMenuItem>
+            </>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>Quebra de linha do nome</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => onPreventLineBreak(false)}>Permitir</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onPreventLineBreak(true)}>Impedir</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <div className="ml-auto flex items-center gap-1">
         {!allSelected && (

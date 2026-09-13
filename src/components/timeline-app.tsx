@@ -35,6 +35,14 @@ import {
   shiftMilestoneDates,
 } from "@/lib/bulk"
 import { SelectionToolbar } from "./selection-toolbar"
+import {
+  LABEL_SCHEMA_VERSION,
+  ZERO_OFFSETS,
+  migratePackageLabelOffsets,
+  migrateMilestoneLabelOffsets,
+} from "@/lib/label-layout"
+
+const LABEL_SCHEMA_KEY = "engsched-label-schema"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "./ui/skeleton"
@@ -64,6 +72,20 @@ export default function TimelineApp() {
 
   useEffect(() => {
     setIsClient(true)
+  }, [])
+
+  // Migração única dos dados do localStorage para o esquema atual de rótulos
+  useEffect(() => {
+    try {
+      const stored = Number(window.localStorage.getItem(LABEL_SCHEMA_KEY) || "1");
+      if (stored >= LABEL_SCHEMA_VERSION) return;
+      setServicePackages(pkgs => pkgs.map(migratePackageLabelOffsets));
+      setMilestones(ms => ms.map(migrateMilestoneLabelOffsets));
+      window.localStorage.setItem(LABEL_SCHEMA_KEY, String(LABEL_SCHEMA_VERSION));
+    } catch (error) {
+      console.error(error);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleProjectSettingsSubmit = (data: Omit<ProjectSettings, 'id'>) => {
@@ -340,6 +362,12 @@ export default function TimelineApp() {
     setMilestones(applyPatch(milestones, selection.milestones, { preventNameLineBreak }));
   };
 
+  const handleBulkResetLabels = () => {
+    setServicePackages(applyPatch(servicePackages, selection.packages, { ...ZERO_OFFSETS }));
+    setMilestones(applyPatch(milestones, selection.milestones, { ...ZERO_OFFSETS }));
+    toast({ title: "Posições redefinidas", description: `${selectionSize(selection)} item(ns) com textos na posição padrão.` });
+  };
+
   const handleBulkDelete = () => {
     const pkSet = new Set(selection.packages);
     const msSet = new Set(selection.milestones);
@@ -461,6 +489,7 @@ export default function TimelineApp() {
           onShiftDates={handleBulkShiftDates}
           onShowTextInside={handleBulkShowTextInside}
           onPreventLineBreak={handleBulkPreventLineBreak}
+          onResetLabels={handleBulkResetLabels}
           onDelete={() => setIsBulkDeleteAlertOpen(true)}
         />
       )}
