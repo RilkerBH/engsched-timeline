@@ -61,3 +61,15 @@ public/             # Assets estáticos
 - Exportação como imagem PNG
 - Salvar/carregar projetos (arquivo `.engsched`)
 - Funciona no navegador e como app desktop
+
+## Versionamento
+
+O projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/). O histórico fica em `CHANGELOG.md`.
+
+Para publicar uma versão:
+
+1. Atualize `"version"` no `package.json` e adicione a seção `## [X.Y.Z]` no `CHANGELOG.md`.
+2. Faça o merge na `main`.
+3. No GitHub, vá em **Actions > Release > Run workflow**, informe a versão (ex.: `1.1.0`) e execute.
+
+O workflow cria a tag `vX.Y.Z` e a Release com as notas extraídas do `CHANGELOG.md`.
