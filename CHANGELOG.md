@@ -17,6 +17,10 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
   electron-builder gerava um executável ARM64 que não abre em PCs Windows
   comuns ("Este aplicativo não pode ser executado em seu PC").
 
+- O pacote Windows deixa de embutir o `node_modules` (o app roda a partir do
+  export estático e não precisa dele): a pasta gerada cai de 699 MB para
+  270 MB, que é o tamanho do próprio Electron.
+
 ### Adicionado
 
 - Workflow *Build Windows*: gera o `.zip` e o `.exe` portátil num runner

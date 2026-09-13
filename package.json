@@ -23,7 +23,9 @@
     },
     "files": [
       "electron/**/*",
-      "out/**/*"
+      "out/**/*",
+      "package.json",
+      "!node_modules/**/*"
     ],
     "win": {
       "target": "dir",
