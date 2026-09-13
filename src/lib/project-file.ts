@@ -2,22 +2,22 @@ import type { ProjectFile, ProjectSettings, ServicePackageData, MilestoneData } 
 import { migrateMilestoneLabelOffsets, migratePackageLabelOffsets } from "./label-layout";
 
 /**
- * Versão do formato do arquivo .engsched.
- * 1.0 - formato original (até a v1.3.0 do app)
- * 1.1 - offsets dos rótulos passam a ser ajustes sobre a posição padrão (v1.4.0)
+ * Version of the .engsched file format.
+ * 1.0 - original format (up to app v1.3.0)
+ * 1.1 - label offsets become adjustments over the default position (app v1.4.0)
  */
 const PROJECT_FILE_VERSION = "1.1";
 const FILE_EXTENSION = ".engsched";
 
 /**
- * Detecta se estamos rodando dentro do Electron
+ * Detects whether we are running inside Electron
  */
 export function isElectron(): boolean {
   return typeof window !== "undefined" && !!(window as any).electronAPI;
 }
 
 /**
- * Cria o objeto ProjectFile a partir do estado atual
+ * Builds the ProjectFile object from the current state
  */
 export function createProjectFile(
   projectSettings: ProjectSettings | null,
@@ -34,14 +34,14 @@ export function createProjectFile(
 }
 
 /**
- * Serializa o projeto para JSON string
+ * Serializes the project to a JSON string
  */
 export function serializeProject(project: ProjectFile): string {
   return JSON.stringify(project, null, 2);
 }
 
 /**
- * Valida e deserializa um JSON string para ProjectFile
+ * Validates and deserializes a JSON string into a ProjectFile
  */
 export function deserializeProject(json: string): ProjectFile {
   const data = JSON.parse(json);
@@ -50,7 +50,7 @@ export function deserializeProject(json: string): ProjectFile {
     throw new Error("Arquivo de projeto inválido: versão ausente.");
   }
 
-  // Validação básica da estrutura
+  // Basic structure validation
   if (data.projectSettings !== null && typeof data.projectSettings !== "object") {
     throw new Error("Arquivo de projeto inválido: configurações corrompidas.");
   }
@@ -69,13 +69,13 @@ export function deserializeProject(json: string): ProjectFile {
     projectSettings: data.projectSettings ?? null,
     servicePackages: data.servicePackages,
     milestones: data.milestones,
-    // O campo "zoom" de arquivos antigos é ignorado (removido na v1.5.0)
+    // The "zoom" field of legacy files is ignored (removed in v1.5.0)
   });
 }
 
 /**
- * Converte um arquivo de versão antiga para a versão atual.
- * Arquivos já na versão atual são devolvidos sem alteração.
+ * Converts a legacy file to the current format version.
+ * Files already at the current version are returned unchanged.
  */
 export function migrateProjectFile(file: ProjectFile): ProjectFile {
   if (file.version === PROJECT_FILE_VERSION) return file;
@@ -89,7 +89,7 @@ export function migrateProjectFile(file: ProjectFile): ProjectFile {
 }
 
 /**
- * Gera nome do arquivo baseado no título do projeto
+ * Builds the file name from the project title
  */
 export function getProjectFileName(title?: string): string {
   const name = title?.replace(/\s+/g, "_") || "projeto";
@@ -97,7 +97,7 @@ export function getProjectFileName(title?: string): string {
 }
 
 /**
- * Salva projeto via download do navegador (web/Mac)
+ * Saves the project through a browser download (web/Mac)
  */
 export function saveProjectWeb(project: ProjectFile): void {
   const json = serializeProject(project);
@@ -111,7 +111,7 @@ export function saveProjectWeb(project: ProjectFile): void {
 }
 
 /**
- * Carrega projeto via file input do navegador (web/Mac)
+ * Loads the project through a browser file input (web/Mac)
  */
 export function loadProjectWeb(): Promise<ProjectFile> {
   return new Promise((resolve, reject) => {
@@ -136,14 +136,14 @@ export function loadProjectWeb(): Promise<ProjectFile> {
       reader.onerror = () => reject(new Error("Erro ao ler o arquivo."));
       reader.readAsText(file);
     };
-    // Caso o usuário cancele o dialog
+    // User cancelled the dialog
     input.oncancel = () => reject(new Error("cancelled"));
     input.click();
   });
 }
 
 /**
- * Salva projeto via diálogo nativo do Electron (Windows)
+ * Saves the project through Electron's native dialog (Windows)
  */
 export async function saveProjectElectron(project: ProjectFile): Promise<boolean> {
   const api = (window as any).electronAPI;
@@ -155,7 +155,7 @@ export async function saveProjectElectron(project: ProjectFile): Promise<boolean
 }
 
 /**
- * Carrega projeto via diálogo nativo do Electron (Windows)
+ * Loads the project through Electron's native dialog (Windows)
  */
 export async function loadProjectElectron(): Promise<ProjectFile | null> {
   const api = (window as any).electronAPI;

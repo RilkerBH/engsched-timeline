@@ -16,7 +16,7 @@ import {
 type ColorPickerProps = {
   value: string
   onChange: (hex: string) => void
-  /** Texto do botão quando não há cor (ex.: edição em bloco). */
+  /** Button text when there is no color (e.g. bulk editing). */
   placeholder?: string
   className?: string
   disabled?: boolean
@@ -50,8 +50,8 @@ function Swatch({ hex, selected, title, onSelect, size = "md" }: {
 }
 
 /**
- * Seletor de cores no estilo do Excel: cores do tema, cores padrão,
- * campo para digitar o código hexadecimal e acesso ao seletor nativo.
+ * Excel-style color picker: theme colors, standard colors,
+ * a hex code input and access to the native color picker.
  */
 export function ColorPicker({ value, onChange, placeholder = "Selecionar cor", className, disabled }: ColorPickerProps) {
   const [open, setOpen] = useState(false)

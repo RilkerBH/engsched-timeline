@@ -1,13 +1,13 @@
 /**
- * Paleta de cores no estilo do Excel (tema Office):
- * 10 cores-base, cada uma com 5 variações (mais claras/mais escuras),
- * mais a linha de "cores padrão".
+ * Excel-style color palette (Office theme):
+ * 10 base colors, each with 5 variations (lighter/darker),
+ * plus the "standard colors" row. Display names are user-facing (pt-BR).
  */
 
 export interface ThemeColorColumn {
   name: string;
   base: string;
-  shades: string[]; // do mais claro ao mais escuro
+  shades: string[]; // from lightest to darkest
 }
 
 export const THEME_COLORS: ThemeColorColumn[] = [
@@ -36,14 +36,14 @@ export const STANDARD_COLORS: { name: string; hex: string }[] = [
   { name: "Roxo",            hex: "#7030A0" },
 ];
 
-/** Cor padrão para novos pacotes e marcos. */
+/** Default color for new packages and milestones. */
 export const DEFAULT_COLOR = "#4472C4";
 
 const HEX_RE = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 /**
- * Normaliza uma entrada de cor para "#RRGGBB" (maiúsculo).
- * Aceita "abc", "#abc", "aabbcc", "#aabbcc". Retorna null se inválida.
+ * Normalizes a color input to "#RRGGBB" (uppercase).
+ * Accepts "abc", "#abc", "aabbcc", "#aabbcc". Returns null when invalid.
  */
 export function normalizeHex(input: string): string | null {
   const m = input.trim().match(HEX_RE);
@@ -57,7 +57,7 @@ export function isValidHex(input: string): boolean {
   return normalizeHex(input) !== null;
 }
 
-/** Retorna "#000000" ou "#FFFFFF" conforme o melhor contraste sobre a cor dada. */
+/** Returns "#000000" or "#FFFFFF", whichever contrasts better with the given color. */
 export function contrastTextColor(hex: string): string {
   const n = normalizeHex(hex);
   if (!n) return "#000000";

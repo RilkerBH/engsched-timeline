@@ -34,7 +34,7 @@ import { ZERO_OFFSETS } from "@/lib/label-layout"
 
 
 const formSchema = (projectStart: string, projectEnd: string) => z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "O nome é obrigatório"),
   startDate: z.string(),
   endDate: z.string(),
   color: z.string().refine(isValidHex, "Cor inválida. Use o formato #RRGGBB."),
@@ -43,13 +43,13 @@ const formSchema = (projectStart: string, projectEnd: string) => z.object({
   preventNameLineBreak: z.boolean().optional(),
   dateFormat: z.enum(['dd/MM/yyyy', 'MMM/yy']).optional(),
 }).refine(data => new Date(data.startDate) <= new Date(data.endDate), {
-  message: "End date must be on or after start date",
+  message: "A data final deve ser igual ou posterior à data de início",
   path: ["endDate"],
 }).refine(data => new Date(data.startDate) >= new Date(projectStart), {
-  message: "Start date must be within project range",
+  message: "A data de início deve estar dentro do período do projeto",
   path: ["startDate"],
 }).refine(data => new Date(data.endDate) <= new Date(projectEnd), {
-  message: "End date must be within project range",
+  message: "A data final deve estar dentro do período do projeto",
   path: ["endDate"],
 });
 
@@ -102,7 +102,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
       ...data,
       id: defaultValues?.id || crypto.randomUUID(),
       order: defaultValues?.order || 0,
-      // Mantém os ajustes manuais de posição dos textos (ou zera se pedido)
+      // Keep manual label position adjustments (or reset them when requested)
       labelOffsetX: resetOffsets ? 0 : (defaultValues?.labelOffsetX ?? 0),
       labelOffsetY: resetOffsets ? 0 : (defaultValues?.labelOffsetY ?? 0),
       dateLabelOffsetX: resetOffsets ? 0 : (defaultValues?.dateLabelOffsetX ?? 0),
@@ -120,7 +120,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">{defaultValues ? "Edit" : "Create"} Service Package</DialogTitle>
+          <DialogTitle className="font-headline">{defaultValues ? "Editar" : "Novo"} Pacote de Serviço</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => handleSubmit(data))} className="space-y-4">
@@ -129,7 +129,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Package Name</FormLabel>
+                  <FormLabel>Nome do Pacote</FormLabel>
                   <FormControl>
                     <Textarea {...field} />
                   </FormControl>
@@ -143,7 +143,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                   <div className="space-y-0.5">
-                    <FormLabel>Disable Name Word Wrap</FormLabel>
+                    <FormLabel>Impedir quebra de linha no nome</FormLabel>
                   </div>
                   <FormControl>
                     <Switch
@@ -160,7 +160,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>Data de Início</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
                     </FormControl>
@@ -173,7 +173,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date</FormLabel>
+                    <FormLabel>Data Final</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
                     </FormControl>
@@ -187,11 +187,11 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
               name="dateFormat"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Date Format</FormLabel>
+                  <FormLabel>Formato da Data</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a format" />
+                        <SelectValue placeholder="Selecione um formato" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -208,7 +208,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
                 name="color"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Color</FormLabel>
+                        <FormLabel>Cor</FormLabel>
                     <FormControl>
                       <ColorPicker value={field.value} onChange={field.onChange} />
                     </FormControl>
@@ -221,7 +221,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
               name="height"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Height ({field.value}px)</FormLabel>
+                  <FormLabel>Altura ({field.value}px)</FormLabel>
                   <FormControl>
                     <Slider
                       value={[field.value]}
@@ -240,7 +240,7 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>Show Name Inside</FormLabel>
+                      <FormLabel>Mostrar nome dentro da barra</FormLabel>
                     </div>
                     <FormControl>
                       <Switch
@@ -274,9 +274,9 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
               </div>
               <div className="flex gap-2">
                 <DialogClose asChild>
-                  <Button type="button" variant="secondary">Cancel</Button>
+                  <Button type="button" variant="secondary">Cancelar</Button>
                 </DialogClose>
-                <Button type="submit">Save</Button>
+                <Button type="submit">Salvar</Button>
               </div>
             </DialogFooter>
           </form>

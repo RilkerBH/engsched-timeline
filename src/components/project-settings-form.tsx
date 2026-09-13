@@ -18,11 +18,11 @@ import { FolderOpen } from "lucide-react"
 import type { ProjectSettings } from "@/lib/types"
 
 const formSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
+  title: z.string().min(1, "O título é obrigatório"),
+  startDate: z.string().min(1, "A data de início é obrigatória"),
+  endDate: z.string().min(1, "A data final é obrigatória"),
 }).refine(data => new Date(data.startDate) < new Date(data.endDate), {
-  message: "End date must be after start date",
+  message: "A data final deve ser posterior à data de início",
   path: ["endDate"],
 });
 
@@ -35,7 +35,7 @@ export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettings
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "New Engineering Project",
+      title: "Novo Projeto de Engenharia",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
     },
@@ -45,8 +45,8 @@ export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettings
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Project Setup</CardTitle>
-          <CardDescription>Configure your new engineering timeline.</CardDescription>
+          <CardTitle className="font-headline text-2xl">Novo Projeto</CardTitle>
+          <CardDescription>Configure o período do seu cronograma de engenharia.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -56,9 +56,9 @@ export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettings
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Title</FormLabel>
+                    <FormLabel>Título do Projeto</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Q3 Feature Launch" {...field} />
+                      <Input placeholder="ex.: Obra Residencial Alfa" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -70,7 +70,7 @@ export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettings
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start Date</FormLabel>
+                      <FormLabel>Data de Início</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -83,7 +83,7 @@ export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettings
                   name="endDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>End Date</FormLabel>
+                      <FormLabel>Data Final</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -92,7 +92,7 @@ export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettings
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full">Create Project</Button>
+              <Button type="submit" className="w-full">Criar Projeto</Button>
             </form>
           </Form>
         </CardContent>

@@ -2,8 +2,8 @@ import { addDays, format, parseISO } from "date-fns";
 import type { MilestoneData, ServicePackageData } from "./types";
 
 /**
- * Funções puras para operações em bloco sobre pacotes e marcos.
- * Não dependem de React nem de estado global.
+ * Pure functions for bulk operations on packages and milestones.
+ * No React or global state dependencies.
  */
 
 export interface Selection {
@@ -22,8 +22,8 @@ export function toggleId(ids: string[], id: string): string[] {
 }
 
 /**
- * Seleção por intervalo (Shift+clique) entre o último selecionado e o alvo,
- * considerando a ordem visual dos pacotes.
+ * Range selection (Shift+click) between the last selected package and the
+ * target, following the visual order of the packages.
  */
 export function rangeSelectPackages(
   packages: ServicePackageData[],
@@ -41,9 +41,8 @@ export function rangeSelectPackages(
 }
 
 /**
- * Move os pacotes selecionados uma posição para cima/baixo como um bloco,
- * preservando a ordem relativa entre eles. Retorna nova lista com `order`
- * renumerado de 0..n-1.
+ * Moves the selected packages one position up/down as a block, preserving
+ * their relative order. Returns a new list with `order` renumbered 0..n-1.
  */
 export function movePackagesBlock(
   packages: ServicePackageData[],
@@ -85,14 +84,14 @@ function shiftIso(date: string, days: number): string {
 
 export interface ShiftResult<T> {
   items: T[];
-  /** Ids que ficariam fora do período do projeto (a operação não é aplicada a eles). */
+  /** Ids that would fall outside the project range (the operation is not applied to them). */
   outOfRange: string[];
 }
 
 /**
- * Desloca as datas dos pacotes selecionados em N dias (positivo = adiante).
- * Itens que sairiam do período do projeto são mantidos sem alteração e
- * reportados em `outOfRange`.
+ * Shifts the dates of the selected packages by N days (positive = forward).
+ * Items that would leave the project range are left untouched and reported
+ * in `outOfRange`.
  */
 export function shiftPackageDates(
   packages: ServicePackageData[],

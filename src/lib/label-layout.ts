@@ -1,36 +1,36 @@
 import type { MilestoneData, ServicePackageData } from "./types";
 
 /**
- * Layout padrão dos rótulos (nome e data) de pacotes e marcos.
+ * Default layout for the name and date labels of packages and milestones.
  *
- * A posição-base de cada rótulo é definida aqui e nos componentes de
- * renderização. Os campos `labelOffset*` / `dateLabelOffset*` dos itens são
- * apenas o AJUSTE MANUAL feito pelo usuário ao arrastar; por padrão valem 0,
- * de modo que um item novo já nasce alinhado sem precisar de correção.
+ * The base position of every label is defined here and in the rendering
+ * components. The `labelOffset*` / `dateLabelOffset*` fields on items are
+ * only the MANUAL ADJUSTMENT made by the user when dragging; they default
+ * to 0, so a new item is born aligned without any correction.
  *
- * Todas as medidas em px. Texto dos rótulos: 12px com linha de 16px.
+ * All measurements in px. Label text: 12px with a 16px line height.
  */
 export const LABEL_LAYOUT = {
   package: {
-    /** Modo "nome fora": nome e data à direita da barra, empilhados no centro vertical. */
+    /** "Name outside" mode: name and date to the right of the bar, stacked around its vertical center. */
     outside: {
-      /** Distância horizontal entre o fim da barra e o início do texto. */
+      /** Horizontal distance between the end of the bar and the start of the text. */
       gapX: 8,
-      /** Distância entre o centro vertical da barra e a base do nome (acima). */
+      /** Distance between the bar's vertical center and the baseline of the name (above). */
       nameAboveCenter: 1,
-      /** Distância entre o centro vertical da barra e o topo da data (abaixo). */
+      /** Distance between the bar's vertical center and the top of the date (below). */
       dateBelowCenter: 1,
     },
-    /** Modo "nome dentro": nome centralizado na barra, data centralizada logo abaixo. */
+    /** "Name inside" mode: name centered in the bar, date centered right below it. */
     inside: {
-      /** Distância entre a base da barra e o topo da data. */
+      /** Distance between the bottom of the bar and the top of the date. */
       dateBelowBar: 2,
     },
   },
   milestone: {
-    /** Distância entre o topo do triângulo e a base da data. */
+    /** Distance between the top of the triangle and the bottom of the date. */
     dateAboveMarker: 2,
-    /** Distância entre o topo do triângulo e a base do nome (fica acima da data). */
+    /** Distance between the top of the triangle and the bottom of the name (sits above the date). */
     nameAboveMarker: 20,
   },
 } as const;
@@ -54,12 +54,12 @@ export function resetLabelOffsets<T extends LabelOffsets>(item: T): T {
 }
 
 // ---------------------------------------------------------------------------
-// Migração do esquema de rótulos 1 (até a v1.3.0) para o esquema 2.
+// Migration from label schema 1 (up to app v1.3.0) to schema 2.
 //
-// No esquema 1 os valores padrão não eram zero e as posições-base eram
-// outras. Itens que ainda estão exatamente no padrão antigo passam para o
-// novo padrão (0). Itens ajustados manualmente recebem offsets convertidos
-// para que a posição na tela fique IGUAL à que tinham antes.
+// In schema 1 the default offsets were not zero and the base positions were
+// different. Items still exactly at the legacy defaults move to the new
+// defaults (0). Manually adjusted items get their offsets converted so that
+// their on-screen position stays IDENTICAL to what it was before.
 // ---------------------------------------------------------------------------
 
 export const LABEL_SCHEMA_VERSION = 2;
@@ -84,15 +84,15 @@ function sameOffsets(a: LabelOffsets, b: LabelOffsets): boolean {
 }
 
 /**
- * Converte os offsets de um pacote do esquema 1 para o 2.
+ * Converts a package's label offsets from schema 1 to schema 2.
  *
- * Posições antigas (esquema 1), modo "fora":
- *   nome:  x = fimBarra + offX + 8 (padding)   base do texto = centro - 8 + offY
- *   data:  x = fimBarra + offX                 topo do texto = centro + offY
- * Posições novas (esquema 2), modo "fora":
- *   nome:  x = fimBarra + gapX + offX          base do texto = centro - nameAboveCenter + offY
- *   data:  x = fimBarra + gapX + offX          topo do texto = centro + dateBelowCenter + offY
- * Modo "dentro": nome idêntico; data antiga ficava em base+4+offY, nova em base+dateBelowBar+offY.
+ * Legacy positions (schema 1), "outside" mode:
+ *   name:  x = barEnd + offX + 8 (padding)   text baseline = center - 8 + offY
+ *   date:  x = barEnd + offX                 text top      = center + offY
+ * New positions (schema 2), "outside" mode:
+ *   name:  x = barEnd + gapX + offX          text baseline = center - nameAboveCenter + offY
+ *   date:  x = barEnd + gapX + offX          text top      = center + dateBelowCenter + offY
+ * "Inside" mode: name unchanged; legacy date sat at bottom+4+offY, new one at bottom+dateBelowBar+offY.
  */
 export function migratePackageLabelOffsets(pkg: ServicePackageData): ServicePackageData {
   const old = readOffsets(pkg, LEGACY_PACKAGE_DEFAULTS);
@@ -118,11 +118,11 @@ export function migratePackageLabelOffsets(pkg: ServicePackageData): ServicePack
 }
 
 /**
- * Converte os offsets de um marco do esquema 1 para o 2.
+ * Converts a milestone's label offsets from schema 1 to schema 2.
  *
- * Antigo: nome e data com base em `bottom: 4px` e `translateY(offY)` (positivo = para baixo),
- *         ou seja, base do texto = topoTriângulo + 4 - offY.
- * Novo:   nome em `bottom: nameAboveMarker`, data em `bottom: dateAboveMarker`.
+ * Legacy: name and date based on `bottom: 4px` and `translateY(offY)` (positive = down),
+ *         i.e. text bottom = triangleTop + 4 - offY.
+ * New:    name at `bottom: nameAboveMarker`, date at `bottom: dateAboveMarker`.
  */
 export function migrateMilestoneLabelOffsets(m: MilestoneData): MilestoneData {
   const old = readOffsets(m, LEGACY_MILESTONE_DEFAULTS);

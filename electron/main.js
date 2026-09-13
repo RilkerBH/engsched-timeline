@@ -57,7 +57,7 @@ function startServer(staticDir) {
   });
 }
 
-// ----- IPC Handlers para Salvar/Abrir Projeto -----
+// ----- IPC handlers for Save/Open Project -----
 
 ipcMain.handle('save-project', async (event, jsonData, defaultFileName) => {
   const win = BrowserWindow.fromWebContents(event.sender);
@@ -101,7 +101,7 @@ ipcMain.handle('load-project', async (event) => {
   }
 });
 
-// ----- Criação da Janela -----
+// ----- Window creation -----
 
 async function createWindow() {
   const outDir = path.join(__dirname, '..', 'out');

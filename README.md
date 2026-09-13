@@ -64,6 +64,12 @@ public/             # Assets estáticos
 - Salvar/carregar projetos (arquivo `.engsched`), inclusive a partir da tela inicial
 - Funciona no navegador e como app desktop
 
+## Convenções
+
+- Interface do usuário em português (pt-BR).
+- Código, identificadores e comentários em inglês.
+- A versão exibida no canto inferior esquerdo do app vem do `package.json`.
+
 ## Arquitetura
 
 Avaliação sobre refatorar com DDD / Arquitetura Limpa e o plano incremental recomendado: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).

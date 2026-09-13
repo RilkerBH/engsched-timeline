@@ -73,7 +73,7 @@ export default function TimelineApp() {
     setIsClient(true)
   }, [])
 
-  // Migração única dos dados do localStorage para o esquema atual de rótulos
+  // One-time migration of localStorage data to the current label schema
   useEffect(() => {
     try {
       const stored = Number(window.localStorage.getItem(LABEL_SCHEMA_KEY) || "1");
@@ -103,7 +103,7 @@ export default function TimelineApp() {
 
   const handleExport = async () => {
     if (selectionSize(rawSelection) > 0) {
-      // Remove o destaque de seleção antes de capturar a imagem
+      // Drop the selection highlight before capturing the image
       setRawSelection(EMPTY_SELECTION);
       await new Promise(resolve => setTimeout(resolve, 50));
     }
@@ -266,9 +266,9 @@ export default function TimelineApp() {
   };
 
 
-  // ----- Seleção múltipla / edição em bloco -----
+  // ----- Multi-selection / bulk editing -----
 
-  // Mantém apenas ids que ainda existem (itens podem ter sido excluídos)
+  // Keep only ids that still exist (items may have been deleted)
   const selection = useMemo<Selection>(() => ({
     packages: rawSelection.packages.filter(id => servicePackages.some(p => p.id === id)),
     milestones: rawSelection.milestones.filter(id => milestones.some(m => m.id === id)),
@@ -376,7 +376,7 @@ export default function TimelineApp() {
     toast({ title: "Itens excluídos", description: `${total} item(ns) removido(s).`, variant: "destructive" });
   };
 
-  // Atalhos: Esc limpa a seleção; Delete abre a confirmação de exclusão
+  // Shortcuts: Esc clears the selection; Delete opens the delete confirmation
   useEffect(() => {
     if (!hasSelection) return;
     const onKeyDown = (e: KeyboardEvent) => {

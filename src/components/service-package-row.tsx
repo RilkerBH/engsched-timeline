@@ -69,28 +69,28 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
 
   if (packageData.showTextInside) {
     const { dateBelowBar } = LABEL_LAYOUT.package.inside;
-    // Nome centralizado dentro da barra
+    // Name centered inside the bar
     nameLabelStyle.top = `50%`;
     nameLabelStyle.left = `50%`;
     nameLabelStyle.transform = `translate(calc(-50% + ${offX}px), calc(-50% + ${offY}px)) ${nameDndTransform}`;
     nameLabelStyle.textAlign = 'center';
     nameLabelStyle.width = `calc(100% - 16px)`;
 
-    // Data centralizada logo abaixo da barra
+    // Date centered right below the bar
     dateLabelStyle.top = `calc(100% + ${dateBelowBar + dOffY}px)`;
     dateLabelStyle.left = `calc(50% + ${dOffX}px)`;
     dateLabelStyle.transform = `translateX(-50%) ${dateDndTransform}`;
     dateLabelStyle.textAlign = 'center';
   } else {
     const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.package.outside;
-    // Nome à direita da barra, com a base do texto logo acima do centro vertical
+    // Name to the right of the bar, text baseline just above the vertical center
     nameLabelStyle.top = `50%`;
     nameLabelStyle.left = `calc(100% + ${gapX + offX}px)`;
     nameLabelStyle.transform = `translateY(calc(-100% + ${offY - nameAboveCenter}px)) ${nameDndTransform}`;
     nameLabelStyle.textAlign = 'left';
     nameLabelStyle.width = 'max-content';
 
-    // Data à direita da barra, alinhada ao nome, logo abaixo do centro vertical
+    // Date to the right of the bar, aligned with the name, just below the vertical center
     dateLabelStyle.top = `50%`;
     dateLabelStyle.left = `calc(100% + ${gapX + dOffX}px)`;
     dateLabelStyle.transform = `translateY(${dateBelowCenter + dOffY}px) ${dateDndTransform}`;

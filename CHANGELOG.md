@@ -9,6 +9,19 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.6.0] - 2026-09-13
+
+### Adicionado
+
+- Número da versão do app no canto inferior esquerdo da interface (lido do
+  `package.json` em tempo de build).
+
+### Alterado
+
+- Interface 100% em português: formulários de projeto, pacote e marco,
+  mensagens de validação e botões "Novo Pacote" / "Novo Marco".
+- Código-fonte e comentários padronizados em inglês (sem mudança de comportamento).
+
 ## [1.5.0] - 2026-09-13
 
 ### Removido
@@ -104,6 +117,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.6.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.2.0...v1.3.0

@@ -44,7 +44,7 @@ export function ProjectSettingsDialog({ isOpen, onClose, onSubmit, defaultValues
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "New Engineering Project",
+      title: "Novo Projeto de Engenharia",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
       ...defaultValues,
