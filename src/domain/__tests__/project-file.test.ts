@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createProjectFile, deserializeProject, getProjectFileName, migrateProjectFile, serializeProject } from "@/lib/project-file";
+import { createProjectFile, deserializeProject, getProjectFileName, migrateProjectFile, serializeProject } from "@/domain/project-file";
 
 const settings = { id: "p", title: "Obra X", startDate: "2026-01-01", endDate: "2026-12-31" };
 

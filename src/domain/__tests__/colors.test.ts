@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STANDARD_COLORS, THEME_COLORS, contrastTextColor, isValidHex, normalizeHex } from "@/lib/colors";
+import { STANDARD_COLORS, THEME_COLORS, contrastTextColor, isValidHex, normalizeHex } from "@/domain/colors";
 
 describe("normalizeHex", () => {
   it("accepts 3 and 6 digit forms with or without #", () => {

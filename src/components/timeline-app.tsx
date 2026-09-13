@@ -6,15 +6,9 @@ import { toPng } from "html-to-image"
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-import type { ProjectSettings, ServicePackageData, MilestoneData } from "@/lib/types"
-import {
-  createProjectFile,
-  isElectron,
-  saveProjectWeb,
-  loadProjectWeb,
-  saveProjectElectron,
-  loadProjectElectron,
-} from "@/lib/project-file"
+import type { ProjectSettings, ServicePackageData, MilestoneData } from "@/domain/types"
+import { createProjectFile } from "@/domain/project-file"
+import { getProjectStorage } from "@/infrastructure/project-storage"
 import useLocalStorage from "@/hooks/use-local-storage"
 import { ProjectSettingsForm } from "./project-settings-form"
 import { TimelineControls } from "./timeline-controls"
@@ -22,7 +16,7 @@ import { TimelineHeader } from "./timeline-header"
 import { ServicePackageRow } from "./service-package-row"
 import { ServicePackageForm } from "./service-package-form"
 import { MilestoneForm } from "./milestone-form"
-import { getPositionAndWidth } from "@/lib/utils"
+import { getPositionAndWidth } from "@/domain/layout"
 import {
   EMPTY_SELECTION,
   type Selection,
@@ -33,16 +27,17 @@ import {
   applyPatch,
   shiftPackageDates,
   shiftMilestoneDates,
-} from "@/lib/bulk"
+} from "@/domain/bulk"
 import { SelectionToolbar } from "./selection-toolbar"
 import {
   LABEL_SCHEMA_VERSION,
   ZERO_OFFSETS,
   migratePackageLabelOffsets,
   migrateMilestoneLabelOffsets,
-} from "@/lib/label-layout"
+} from "@/domain/label-layout"
 
 const LABEL_SCHEMA_KEY = "engsched-label-schema"
+const projectStorage = getProjectStorage()
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "./ui/skeleton"
@@ -134,14 +129,9 @@ export default function TimelineApp() {
   const handleSaveProject = async () => {
     const project = createProjectFile(projectSettings, servicePackages, milestones);
     try {
-      if (isElectron()) {
-        const saved = await saveProjectElectron(project);
-        if (saved) {
-          toast({ title: "Projeto Salvo!", description: "Arquivo salvo com sucesso." });
-        }
-      } else {
-        saveProjectWeb(project);
-        toast({ title: "Projeto Salvo!", description: "Arquivo baixado com sucesso." });
+      const saved = await projectStorage.save(project);
+      if (saved) {
+        toast({ title: "Projeto Salvo!", description: "Arquivo salvo com sucesso." });
       }
     } catch {
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível salvar o projeto." });
@@ -150,12 +140,7 @@ export default function TimelineApp() {
 
   const handleLoadProject = async () => {
     try {
-      let project;
-      if (isElectron()) {
-        project = await loadProjectElectron();
-      } else {
-        project = await loadProjectWeb();
-      }
+      const project = await projectStorage.load();
       if (!project) return;
 
       setProjectSettings(project.projectSettings);
@@ -163,7 +148,6 @@ export default function TimelineApp() {
       setMilestones(project.milestones);
       toast({ title: "Projeto Carregado!", description: "Todos os dados foram restaurados." });
     } catch (err: any) {
-      if (err?.message === "cancelled") return;
       toast({ variant: "destructive", title: "Erro ao Abrir", description: err?.message || "Arquivo de projeto inválido." });
     }
   };

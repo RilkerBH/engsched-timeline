@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import type { ProjectSettings } from "@/lib/types"
+import type { ProjectSettings } from "@/domain/types"
 
 const formSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),

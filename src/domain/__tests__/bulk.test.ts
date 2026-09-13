@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MilestoneData, ServicePackageData } from "@/lib/types";
+import type { MilestoneData, ServicePackageData } from "@/domain/types";
 import {
   applyPatch,
   movePackagesBlock,
@@ -8,7 +8,7 @@ import {
   shiftMilestoneDates,
   shiftPackageDates,
   toggleId,
-} from "@/lib/bulk";
+} from "@/domain/bulk";
 
 const pkg = (id: string, order: number, extra: Partial<ServicePackageData> = {}): ServicePackageData => ({
   id, name: id, order,

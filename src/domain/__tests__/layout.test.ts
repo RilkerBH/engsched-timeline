@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMilestonePosition, getMonthHeaders, getPositionAndWidth } from "@/lib/utils";
+import { getMilestonePosition, getMonthHeaders, getPositionAndWidth } from "@/domain/layout";
 
 const P = ["2026-01-01", "2026-12-31"] as const; // 364 days between the two dates
 

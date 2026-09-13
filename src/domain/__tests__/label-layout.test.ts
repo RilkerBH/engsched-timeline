@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { MilestoneData, ServicePackageData } from "@/lib/types";
+import type { MilestoneData, ServicePackageData } from "@/domain/types";
 import {
   LABEL_LAYOUT,
   ZERO_OFFSETS,
   migrateMilestoneLabelOffsets,
   migratePackageLabelOffsets,
   resetLabelOffsets,
-} from "@/lib/label-layout";
+} from "@/domain/label-layout";
 
 const basePkg: ServicePackageData = {
   id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01",

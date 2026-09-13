@@ -1,6 +1,6 @@
 "use client"
 
-import type { ServicePackageData } from "@/lib/types"
+import type { ServicePackageData } from "@/domain/types"
 import { useDraggable } from "@dnd-kit/core"
 import { ArrowDown, ArrowUp } from "lucide-react"
 import { Button } from "./ui/button"
@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { LABEL_LAYOUT } from "@/lib/label-layout"
+import { LABEL_LAYOUT } from "@/domain/label-layout"
 
 type ServicePackageRowProps = {
   packageData: ServicePackageData & { left: number; width: number; top: number; }

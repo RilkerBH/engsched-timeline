@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { FolderOpen } from "lucide-react"
-import type { ProjectSettings } from "@/lib/types"
+import type { ProjectSettings } from "@/domain/types"
 
 const formSchema = z.object({
   title: z.string().min(1, "O título é obrigatório"),

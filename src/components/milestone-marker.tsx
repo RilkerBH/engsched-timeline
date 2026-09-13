@@ -1,11 +1,11 @@
 "use client"
 
-import type { MilestoneData } from "@/lib/types"
+import type { MilestoneData } from "@/domain/types"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useDraggable } from "@dnd-kit/core"
-import { LABEL_LAYOUT } from "@/lib/label-layout"
+import { LABEL_LAYOUT } from "@/domain/label-layout"
 
 type MilestoneMarkerProps = {
   milestone: MilestoneData & { position: number };

@@ -1,7 +1,7 @@
 "use client"
 
-import type { ProjectSettings, MilestoneData } from "@/lib/types"
-import { getMonthHeaders, getMilestonePosition } from "@/lib/utils"
+import type { ProjectSettings, MilestoneData } from "@/domain/types"
+import { getMonthHeaders, getMilestonePosition } from "@/domain/layout"
 import { MilestoneMarker } from "./milestone-marker"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 

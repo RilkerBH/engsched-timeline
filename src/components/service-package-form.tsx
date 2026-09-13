@@ -25,12 +25,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { ServicePackageData } from "@/lib/types"
+import type { ServicePackageData } from "@/domain/types"
 import { useEffect } from "react"
 import { RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
-import { DEFAULT_COLOR, isValidHex } from "@/lib/colors"
-import { ZERO_OFFSETS } from "@/lib/label-layout"
+import { DEFAULT_COLOR, isValidHex } from "@/domain/colors"
+import { ZERO_OFFSETS } from "@/domain/label-layout"
 
 
 const formSchema = (projectStart: string, projectEnd: string) => z.object({

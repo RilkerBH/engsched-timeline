@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ColorPicker } from "@/components/color-picker"
-import type { Selection } from "@/lib/bulk"
+import type { Selection } from "@/domain/bulk"
 
 type DateFormat = "dd/MM/yyyy" | "MMM/yy"
 

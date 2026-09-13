@@ -11,7 +11,7 @@ import {
   STANDARD_COLORS,
   normalizeHex,
   contrastTextColor,
-} from "@/lib/colors"
+} from "@/domain/colors"
 
 type ColorPickerProps = {
   value: string

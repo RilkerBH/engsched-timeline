@@ -42,13 +42,14 @@ O instalador será gerado na pasta `dist/`.
 
 ```
 src/
-├── app/            # Páginas e layout Next.js
-├── components/     # Componentes do app + ui/ (shadcn)
-├── hooks/          # Custom hooks (localStorage, toast)
-├── lib/            # Utilitários, tipos e lógica de arquivos
-└── ai/             # Integração AI (Genkit)
-electron/           # Processo principal do Electron
-public/             # Assets estáticos
+├── domain/          # Tipos e funções puras (layout, cores, operações em bloco, formato .engsched)
+├── infrastructure/  # Adapters de I/O (salvar/abrir arquivo no navegador e no Electron)
+├── components/      # Componentes React do app + ui/ (shadcn)
+├── hooks/           # Custom hooks (localStorage, toast)
+├── lib/             # Utilitário `cn` do shadcn
+└── app/             # Páginas e layout Next.js
+electron/            # Processo principal do Electron
+public/              # Assets estáticos
 ```
 
 ## Funcionalidades
