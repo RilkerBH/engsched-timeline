@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import type * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -29,29 +29,11 @@ import type { ServicePackageData } from "@/domain/types"
 import { useEffect } from "react"
 import { RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
-import { DEFAULT_COLOR, isValidHex } from "@/domain/colors"
+import { DEFAULT_COLOR } from "@/domain/colors"
+import { PACKAGE_HEIGHT, servicePackageSchema } from "@/domain/validation"
 import { ZERO_OFFSETS } from "@/domain/label-layout"
 
 
-const formSchema = (projectStart: string, projectEnd: string) => z.object({
-  name: z.string().min(1, "O nome é obrigatório"),
-  startDate: z.string(),
-  endDate: z.string(),
-  color: z.string().refine(isValidHex, "Cor inválida. Use o formato #RRGGBB."),
-  height: z.number().min(16).max(80),
-  showTextInside: z.boolean(),
-  preventNameLineBreak: z.boolean().optional(),
-  dateFormat: z.enum(['dd/MM/yyyy', 'MMM/yy']).optional(),
-}).refine(data => new Date(data.startDate) <= new Date(data.endDate), {
-  message: "A data final deve ser igual ou posterior à data de início",
-  path: ["endDate"],
-}).refine(data => new Date(data.startDate) >= new Date(projectStart), {
-  message: "A data de início deve estar dentro do período do projeto",
-  path: ["startDate"],
-}).refine(data => new Date(data.endDate) <= new Date(projectEnd), {
-  message: "A data final deve estar dentro do período do projeto",
-  path: ["endDate"],
-});
 
 
 type Props = {
@@ -64,7 +46,7 @@ type Props = {
 }
 
 export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projectSettings, defaultValues }: Props) {
-  const dynamicSchema = formSchema(projectSettings.startDate, projectSettings.endDate);
+  const dynamicSchema = servicePackageSchema(projectSettings);
   
   const initialFormValues = {
     name: "",
@@ -226,8 +208,8 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
                     <Slider
                       value={[field.value]}
                       onValueChange={(value) => field.onChange(value[0])}
-                      min={16}
-                      max={80}
+                      min={PACKAGE_HEIGHT.min}
+                      max={PACKAGE_HEIGHT.max}
                       step={1}
                     />
                   </FormControl>

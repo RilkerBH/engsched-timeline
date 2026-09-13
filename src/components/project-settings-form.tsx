@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -16,15 +15,8 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { FolderOpen } from "lucide-react"
 import type { ProjectSettings } from "@/domain/types"
+import { type ProjectSettingsInput, projectSettingsSchema } from "@/domain/validation"
 
-const formSchema = z.object({
-  title: z.string().min(1, "O título é obrigatório"),
-  startDate: z.string().min(1, "A data de início é obrigatória"),
-  endDate: z.string().min(1, "A data final é obrigatória"),
-}).refine(data => new Date(data.startDate) < new Date(data.endDate), {
-  message: "A data final deve ser posterior à data de início",
-  path: ["endDate"],
-});
 
 type ProjectSettingsFormProps = {
   onSubmit: (data: Omit<ProjectSettings, 'id'>) => void;
@@ -32,8 +24,8 @@ type ProjectSettingsFormProps = {
 }
 
 export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettingsFormProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ProjectSettingsInput>({
+    resolver: zodResolver(projectSettingsSchema),
     defaultValues: {
       title: "Novo Projeto de Engenharia",
       startDate: new Date().toISOString().split('T')[0],

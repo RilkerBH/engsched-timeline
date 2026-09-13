@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+import type * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,22 +28,12 @@ import type { MilestoneData } from "@/domain/types"
 import { useEffect } from "react"
 import { RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
-import { DEFAULT_COLOR, isValidHex } from "@/domain/colors"
+import { DEFAULT_COLOR } from "@/domain/colors"
+import { MILESTONE_HEIGHT, milestoneSchema } from "@/domain/validation"
 import { ZERO_OFFSETS } from "@/domain/label-layout"
 import { Switch } from "@/components/ui/switch"
 
 
-const formSchema = (projectStart: string, projectEnd: string) => z.object({
-  name: z.string().min(1, "O nome é obrigatório"),
-  date: z.string(),
-  color: z.string().refine(isValidHex, "Cor inválida. Use o formato #RRGGBB."),
-  height: z.number().min(20).max(60),
-  preventNameLineBreak: z.boolean().optional(),
-  dateFormat: z.enum(['dd/MM/yyyy', 'MMM/yy']).optional(),
-}).refine(data => new Date(data.date) >= new Date(projectStart) && new Date(data.date) <= new Date(projectEnd), {
-  message: "A data deve estar dentro do período do projeto",
-  path: ["date"],
-});
 
 type Props = {
   isOpen: boolean
@@ -55,7 +45,7 @@ type Props = {
 }
 
 export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSettings, defaultValues }: Props) {
-  const dynamicSchema = formSchema(projectSettings.startDate, projectSettings.endDate);
+  const dynamicSchema = milestoneSchema(projectSettings);
 
   const initialFormValues = {
     name: "",
@@ -200,8 +190,8 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
                     <Slider
                       value={[field.value]}
                       onValueChange={(value) => field.onChange(value[0])}
-                      min={20}
-                      max={60}
+                      min={MILESTONE_HEIGHT.min}
+                      max={MILESTONE_HEIGHT.max}
                       step={1}
                     />
                   </FormControl>
