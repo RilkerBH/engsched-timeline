@@ -36,7 +36,7 @@ export const STANDARD_COLORS: { name: string; hex: string }[] = [
   { name: "Roxo",            hex: "#7030A0" },
 ];
 
-/** Default color for new packages and milestones. */
+/** Default color for new tasks and milestones. */
 export const DEFAULT_COLOR = "#4472C4";
 
 const HEX_RE = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;

@@ -12,27 +12,35 @@ describe("serialize / deserialize", () => {
 
   it("rejects files without a version or with a corrupt structure", () => {
     expect(() => deserializeProject("{}")).toThrow(/versão ausente/);
-    expect(() => deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: "x", milestones: [] }))).toThrow(/tarefas/);
-    expect(() => deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: [], milestones: null }))).toThrow(/marcos/);
+    expect(() => deserializeProject(JSON.stringify({ version: "1.2", projectSettings: null, tasks: "x", milestones: [] }))).toThrow(/tarefas/);
+    expect(() => deserializeProject(JSON.stringify({ version: "1.2", projectSettings: null, tasks: [], milestones: null }))).toThrow(/marcos/);
     expect(() => deserializeProject("not json")).toThrow();
   });
 
   it("ignores the legacy zoom field", () => {
-    const back = deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: [], milestones: [], zoom: 150 }));
+    const back = deserializeProject(JSON.stringify({ version: "1.2", projectSettings: null, tasks: [], milestones: [], zoom: 150 }));
     expect(back).not.toHaveProperty("zoom");
+  });
+
+  it("reads tasks from the legacy servicePackages key (formats 1.0 and 1.1)", () => {
+    const task = { id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01", color: "#000", height: 32, showTextInside: false, labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 };
+    const back = deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: [task], milestones: [] }));
+    expect(back.version).toBe("1.2");
+    expect(back.tasks).toEqual([task]);
+    expect(back).not.toHaveProperty("servicePackages");
   });
 });
 
 describe("migrateProjectFile", () => {
   it("migrates 1.0 label offsets and stamps the current version", () => {
-    const legacy = {
+    const legacy = deserializeProject(JSON.stringify({
       version: "1.0", exportedAt: "x", projectSettings: settings,
       servicePackages: [{ id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01", color: "#000", height: 32, showTextInside: false, labelOffsetX: 10, labelOffsetY: 0, dateLabelOffsetX: 10, dateLabelOffsetY: 15 }],
       milestones: [{ id: "m", name: "m", date: "2026-01-10", color: "#000", height: 30, labelOffsetX: 0, labelOffsetY: -10, dateLabelOffsetX: 0, dateLabelOffsetY: 15 }],
-    };
+    }));
     const migrated = migrateProjectFile(legacy);
-    expect(migrated.version).toBe("1.1");
-    expect(migrated.servicePackages[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
+    expect(migrated.version).toBe("1.2");
+    expect(migrated.tasks[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
     expect(migrated.milestones[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
   });
 

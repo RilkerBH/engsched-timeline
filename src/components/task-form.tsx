@@ -25,12 +25,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { ServicePackageData } from "@/domain/types"
+import type { TaskData } from "@/domain/types"
 import { useEffect } from "react"
 import { RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
 import { DEFAULT_COLOR } from "@/domain/colors"
-import { PACKAGE_HEIGHT, servicePackageSchema } from "@/domain/validation"
+import { TASK_HEIGHT, taskSchema } from "@/domain/validation"
 import { ZERO_OFFSETS } from "@/domain/label-layout"
 
 
@@ -39,14 +39,14 @@ import { ZERO_OFFSETS } from "@/domain/label-layout"
 type Props = {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: ServicePackageData) => void
+  onSubmit: (data: TaskData) => void
   onDelete?: (id: string) => void
   projectSettings: { startDate: string, endDate: string }
-  defaultValues?: ServicePackageData
+  defaultValues?: TaskData
 }
 
-export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projectSettings, defaultValues }: Props) {
-  const dynamicSchema = servicePackageSchema(projectSettings);
+export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings, defaultValues }: Props) {
+  const dynamicSchema = taskSchema(projectSettings);
   
   const initialFormValues = {
     name: "",
@@ -208,8 +208,8 @@ export function ServicePackageForm({ isOpen, onClose, onSubmit, onDelete, projec
                     <Slider
                       value={[field.value]}
                       onValueChange={(value) => field.onChange(value[0])}
-                      min={PACKAGE_HEIGHT.min}
-                      max={PACKAGE_HEIGHT.max}
+                      min={TASK_HEIGHT.min}
+                      max={TASK_HEIGHT.max}
                       step={1}
                     />
                   </FormControl>

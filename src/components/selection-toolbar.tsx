@@ -20,7 +20,7 @@ type DateFormat = "dd/MM/yyyy" | "MMM/yy"
 
 type SelectionToolbarProps = {
   selection: Selection
-  totalPackages: number
+  totalTasks: number
   totalMilestones: number
   onClear: () => void
   onSelectAll: () => void
@@ -35,18 +35,18 @@ type SelectionToolbarProps = {
 }
 
 export function SelectionToolbar({
-  selection, totalPackages, totalMilestones,
+  selection, totalTasks, totalMilestones,
   onClear, onSelectAll, onColor, onDateFormat, onMove, onShiftDates,
   onShowTextInside, onPreventLineBreak, onResetLabels, onDelete,
 }: SelectionToolbarProps) {
   const [shiftDays, setShiftDays] = useState("7")
-  const nPk = selection.packages.length
+  const nTasks = selection.tasks.length
   const nMs = selection.milestones.length
-  const hasPackages = nPk > 0
-  const allSelected = nPk === totalPackages && nMs === totalMilestones
+  const hasTasks = nTasks > 0
+  const allSelected = nTasks === totalTasks && nMs === totalMilestones
 
   const summary = [
-    nPk > 0 ? `${nPk} tarefa${nPk > 1 ? "s" : ""}` : null,
+    nTasks > 0 ? `${nTasks} tarefa${nTasks > 1 ? "s" : ""}` : null,
     nMs > 0 ? `${nMs} marco${nMs > 1 ? "s" : ""}` : null,
   ].filter(Boolean).join(" e ")
 
@@ -60,7 +60,7 @@ export function SelectionToolbar({
     <div className="flex flex-wrap items-center gap-3 border border-primary/40 bg-primary/5 px-4 py-2 text-sm">
       <div className="flex items-center gap-2 font-medium">
         <CheckSquare className="h-4 w-4 text-primary" />
-        <span>{summary} selecionad{nMs > 0 ? "o" : "a"}{nPk + nMs > 1 ? "s" : ""}</span>
+        <span>{summary} selecionad{nMs > 0 ? "o" : "a"}{nTasks + nMs > 1 ? "s" : ""}</span>
       </div>
 
       <div className="h-5 w-px bg-border" />
@@ -103,7 +103,7 @@ export function SelectionToolbar({
         <span className="text-muted-foreground">dias</span>
       </div>
 
-      {hasPackages && (
+      {hasTasks && (
         <div className="flex items-center gap-1">
           <span className="mr-1 text-muted-foreground">Ordem</span>
           <Button size="icon" variant="outline" className="h-8 w-8" title="Mover bloco para cima" onClick={() => onMove("up")}>
@@ -125,7 +125,7 @@ export function SelectionToolbar({
           <DropdownMenuItem onClick={onResetLabels}>
             <RotateCcw className="mr-2 h-4 w-4" /> Redefinir posição dos textos
           </DropdownMenuItem>
-          {hasPackages && (
+          {hasTasks && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Nome dentro da barra</DropdownMenuLabel>

@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useReducer } from "react";
-import type { MilestoneData, ProjectFile, ProjectSettings, ServicePackageData } from "@/domain/types";
-import { type BulkPatch, type Selection, selectionSize, shiftMilestoneDates, shiftPackageDates } from "@/domain/bulk";
+import type { MilestoneData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
+import { type BulkPatch, type Selection, selectionSize, shiftMilestoneDates, shiftTaskDates } from "@/domain/bulk";
 import { createProjectFile } from "@/domain/project-file";
 import { INITIAL_PROJECT_STATE, type ItemKind, type LabelKind, projectReducer } from "./project-reducer";
 import { loadPersistedState, persistState } from "./project-persistence";
@@ -34,8 +34,8 @@ export function useProject() {
   const loadProject = useCallback((file: ProjectFile) => dispatch({ type: "project/loaded", file }), []);
   const resetProject = useCallback(() => dispatch({ type: "project/reset" }), []);
 
-  const savePackage = useCallback((pkg: ServicePackageData) => dispatch({ type: "package/saved", pkg }), []);
-  const deletePackage = useCallback((id: string) => dispatch({ type: "package/deleted", id }), []);
+  const saveTask = useCallback((task: TaskData) => dispatch({ type: "task/saved", task }), []);
+  const deleteTask = useCallback((id: string) => dispatch({ type: "task/deleted", id }), []);
   const saveMilestone = useCallback((milestone: MilestoneData) => dispatch({ type: "milestone/saved", milestone }), []);
   const deleteMilestone = useCallback((id: string) => dispatch({ type: "milestone/deleted", id }), []);
 
@@ -43,8 +43,8 @@ export function useProject() {
     dispatch({ type: "label/dragged", item, label, id, delta });
   }, []);
 
-  const movePackages = useCallback((ids: string[], direction: "up" | "down") => {
-    dispatch({ type: "packages/moved", ids, direction });
+  const moveTasks = useCallback((ids: string[], direction: "up" | "down") => {
+    dispatch({ type: "tasks/moved", ids, direction });
   }, []);
 
   const patchItems = useCallback((ids: Selection, patch: BulkPatch) => dispatch({ type: "items/patched", ids, patch }), []);
@@ -56,38 +56,38 @@ export function useProject() {
     if (!state.settings) return { moved: 0, skipped: 0 };
     const { startDate, endDate } = state.settings;
     const skipped =
-      shiftPackageDates(state.packages, ids.packages, days, startDate, endDate).outOfRange.length +
+      shiftTaskDates(state.tasks, ids.tasks, days, startDate, endDate).outOfRange.length +
       shiftMilestoneDates(state.milestones, ids.milestones, days, startDate, endDate).outOfRange.length;
     dispatch({ type: "items/datesShifted", ids, days });
     return { moved: selectionSize(ids) - skipped, skipped };
   }, [state]);
 
-  const toProjectFile = useCallback(() => createProjectFile(state.settings, state.packages, state.milestones), [state]);
+  const toProjectFile = useCallback(() => createProjectFile(state.settings, state.tasks, state.milestones), [state]);
 
   const isEmpty = state === INITIAL_PROJECT_STATE;
 
   return useMemo(() => ({
     settings: state.settings,
-    packages: state.packages,
+    tasks: state.tasks,
     milestones: state.milestones,
     isEmpty,
     configureProject,
     loadProject,
     resetProject,
-    savePackage,
-    deletePackage,
+    saveTask,
+    deleteTask,
     saveMilestone,
     deleteMilestone,
     dragLabel,
-    movePackages,
+    moveTasks,
     patchItems,
     resetLabels,
     deleteItems,
     shiftDates,
     toProjectFile,
   }), [
-    state, isEmpty, configureProject, loadProject, resetProject, savePackage, deletePackage,
-    saveMilestone, deleteMilestone, dragLabel, movePackages, patchItems, resetLabels, deleteItems,
+    state, isEmpty, configureProject, loadProject, resetProject, saveTask, deleteTask,
+    saveMilestone, deleteMilestone, dragLabel, moveTasks, patchItems, resetLabels, deleteItems,
     shiftDates, toProjectFile,
   ]);
 }

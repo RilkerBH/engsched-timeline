@@ -1,7 +1,7 @@
-import type { MilestoneData, ServicePackageData } from "./types";
+import type { MilestoneData, TaskData } from "./types";
 
 /**
- * Default layout for the name and date labels of packages and milestones.
+ * Default layout for the name and date labels of tasks and milestones.
  *
  * The base position of every label is defined here and in the rendering
  * components. The `labelOffset*` / `dateLabelOffset*` fields on items are
@@ -11,7 +11,7 @@ import type { MilestoneData, ServicePackageData } from "./types";
  * All measurements in px. Label text: 12px with a 16px line height.
  */
 export const LABEL_LAYOUT = {
-  package: {
+  task: {
     /** "Name outside" mode: name and date to the right of the bar, stacked around its vertical center. */
     outside: {
       /** Horizontal distance between the end of the bar and the start of the text. */
@@ -64,7 +64,7 @@ export function resetLabelOffsets<T extends LabelOffsets>(item: T): T {
 
 export const LABEL_SCHEMA_VERSION = 2;
 
-const LEGACY_PACKAGE_DEFAULTS: LabelOffsets = { labelOffsetX: 10, labelOffsetY: 0, dateLabelOffsetX: 10, dateLabelOffsetY: 15 };
+const LEGACY_TASK_DEFAULTS: LabelOffsets = { labelOffsetX: 10, labelOffsetY: 0, dateLabelOffsetX: 10, dateLabelOffsetY: 15 };
 const LEGACY_MILESTONE_DEFAULTS: LabelOffsets = { labelOffsetX: 0, labelOffsetY: -10, dateLabelOffsetX: 0, dateLabelOffsetY: 15 };
 
 const num = (v: unknown, fallback: number) => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
@@ -84,7 +84,7 @@ function sameOffsets(a: LabelOffsets, b: LabelOffsets): boolean {
 }
 
 /**
- * Converts a package's label offsets from schema 1 to schema 2.
+ * Converts a task's label offsets from schema 1 to schema 2.
  *
  * Legacy positions (schema 1), "outside" mode:
  *   name:  x = barEnd + offX + 8 (padding)   text baseline = center - 8 + offY
@@ -94,14 +94,14 @@ function sameOffsets(a: LabelOffsets, b: LabelOffsets): boolean {
  *   date:  x = barEnd + gapX + offX          text top      = center + dateBelowCenter + offY
  * "Inside" mode: name unchanged; legacy date sat at bottom+4+offY, new one at bottom+dateBelowBar+offY.
  */
-export function migratePackageLabelOffsets(pkg: ServicePackageData): ServicePackageData {
-  const old = readOffsets(pkg, LEGACY_PACKAGE_DEFAULTS);
-  if (sameOffsets(old, LEGACY_PACKAGE_DEFAULTS)) return { ...pkg, ...ZERO_OFFSETS };
+export function migrateTaskLabelOffsets(task: TaskData): TaskData {
+  const old = readOffsets(task, LEGACY_TASK_DEFAULTS);
+  if (sameOffsets(old, LEGACY_TASK_DEFAULTS)) return { ...task, ...ZERO_OFFSETS };
 
-  const { outside, inside } = LABEL_LAYOUT.package;
-  if (pkg.showTextInside) {
+  const { outside, inside } = LABEL_LAYOUT.task;
+  if (task.showTextInside) {
     return {
-      ...pkg,
+      ...task,
       labelOffsetX: old.labelOffsetX,
       labelOffsetY: old.labelOffsetY,
       dateLabelOffsetX: old.dateLabelOffsetX,
@@ -109,7 +109,7 @@ export function migratePackageLabelOffsets(pkg: ServicePackageData): ServicePack
     };
   }
   return {
-    ...pkg,
+    ...task,
     labelOffsetX: old.labelOffsetX + 8 - outside.gapX,
     labelOffsetY: old.labelOffsetY - 8 + outside.nameAboveCenter,
     dateLabelOffsetX: old.dateLabelOffsetX - outside.gapX,

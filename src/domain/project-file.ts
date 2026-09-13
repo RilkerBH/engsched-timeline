@@ -1,12 +1,14 @@
-import type { ProjectFile, ProjectSettings, ServicePackageData, MilestoneData } from "./types";
-import { migrateMilestoneLabelOffsets, migratePackageLabelOffsets } from "./label-layout";
+import type { ProjectFile, ProjectSettings, TaskData, MilestoneData } from "./types";
+import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-layout";
 
 /**
  * Version of the .engsched file format.
  * 1.0 - original format (up to app v1.3.0)
  * 1.1 - label offsets become adjustments over the default position (app v1.4.0)
+ * 1.2 - "servicePackages" renamed to "tasks" (app v2.0.0)
  */
-export const PROJECT_FILE_VERSION = "1.1";
+export const PROJECT_FILE_VERSION = "1.2";
+const LEGACY_TASKS_KEY = "servicePackages";
 export const PROJECT_FILE_EXTENSION = ".engsched";
 
 /**
@@ -14,14 +16,14 @@ export const PROJECT_FILE_EXTENSION = ".engsched";
  */
 export function createProjectFile(
   projectSettings: ProjectSettings | null,
-  servicePackages: ServicePackageData[],
+  tasks: TaskData[],
   milestones: MilestoneData[]
 ): ProjectFile {
   return {
     version: PROJECT_FILE_VERSION,
     exportedAt: new Date().toISOString(),
     projectSettings,
-    servicePackages,
+    tasks,
     milestones,
   };
 }
@@ -48,7 +50,9 @@ export function deserializeProject(json: string): ProjectFile {
     throw new Error("Arquivo de projeto inválido: configurações corrompidas.");
   }
 
-  if (!Array.isArray(data.servicePackages)) {
+  // Formats 1.0 and 1.1 stored the tasks under "servicePackages"
+  const tasks = Array.isArray(data.tasks) ? data.tasks : data[LEGACY_TASKS_KEY];
+  if (!Array.isArray(tasks)) {
     throw new Error("Arquivo de projeto inválido: tarefas ausentes.");
   }
 
@@ -60,7 +64,7 @@ export function deserializeProject(json: string): ProjectFile {
     version: data.version,
     exportedAt: data.exportedAt || new Date().toISOString(),
     projectSettings: data.projectSettings ?? null,
-    servicePackages: data.servicePackages,
+    tasks,
     milestones: data.milestones,
     // The "zoom" field of legacy files is ignored (removed in v1.5.0)
   });
@@ -73,12 +77,13 @@ export function deserializeProject(json: string): ProjectFile {
 export function migrateProjectFile(file: ProjectFile): ProjectFile {
   if (file.version === PROJECT_FILE_VERSION) return file;
 
-  let { servicePackages, milestones } = file;
+  let { tasks, milestones } = file;
   if (file.version === "1.0") {
-    servicePackages = servicePackages.map(migratePackageLabelOffsets);
+    tasks = tasks.map(migrateTaskLabelOffsets);
     milestones = milestones.map(migrateMilestoneLabelOffsets);
   }
-  return { ...file, version: PROJECT_FILE_VERSION, servicePackages, milestones };
+  // 1.1 -> 1.2 only renamed the key, which deserializeProject already normalizes
+  return { ...file, version: PROJECT_FILE_VERSION, tasks, milestones };
 }
 
 /**

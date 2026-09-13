@@ -6,18 +6,18 @@ import { RefreshCw, Download, PlusCircle, Milestone, Settings, Save, FolderOpen 
 type TimelineControlsProps = {
   onExport: () => void
   onReset: () => void
-  onAddPackage: () => void
+  onAddTask: () => void
   onAddMilestone: () => void
   onEditProject: () => void
   onSaveProject: () => void
   onLoadProject: () => void
 }
 
-export function TimelineControls({ onExport, onReset, onAddPackage, onAddMilestone, onEditProject, onSaveProject, onLoadProject }: TimelineControlsProps) {
+export function TimelineControls({ onExport, onReset, onAddTask, onAddMilestone, onEditProject, onSaveProject, onLoadProject }: TimelineControlsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-card rounded-b-lg border-t-0 border">
       <div className="flex items-center gap-2">
-         <Button onClick={onAddPackage} size="sm">
+         <Button onClick={onAddTask} size="sm">
           <PlusCircle className="mr-2 h-4 w-4" />
           Nova Tarefa
         </Button>

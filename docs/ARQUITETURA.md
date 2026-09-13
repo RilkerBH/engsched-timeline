@@ -12,7 +12,7 @@ Avaliamos aplicar DDD e Arquitetura Limpa ao projeto. A conclusão foi:
 ```
 src/
 ├── domain/            # TypeScript puro. Sem React, sem window. Testável em ms.
-│   ├── types.ts             Entidades: ProjectSettings, ServicePackageData, MilestoneData, ProjectFile
+│   ├── types.ts             Entidades: ProjectSettings, TaskData, MilestoneData, ProjectFile
 │   ├── layout.ts            Geometria da linha do tempo (datas -> %), empilhamento das linhas
 │   ├── bulk.ts              Seleção por intervalo, mover bloco, deslocar datas, patch em lote
 │   ├── colors.ts            Paleta estilo Excel, normalização de hex, contraste
@@ -21,8 +21,8 @@ src/
 │   └── project-file.ts      Formato .engsched: criar, serializar, validar, migrar (SEM I/O)
 ├── application/       # Orquestra o domínio. Depende só de domain/.
 │   ├── project-reducer.ts   Estado único (ProjectState) + ações nomeadas por intenção
-│   ├── project-persistence.ts  Autosave no localStorage (esquema 2) e conversão das chaves antigas
-│   └── use-project.ts       Hook: expõe estado + comandos (configureProject, savePackage, shiftDates...)
+│   ├── project-persistence.ts  Autosave no localStorage (esquema 3) e conversão dos esquemas antigos
+│   └── use-project.ts       Hook: expõe estado + comandos (configureProject, saveTask, shiftDates...)
 ├── infrastructure/    # Adapters concretos.
 │   └── project-storage.ts   Port ProjectStorage + adapters web (download/input) e Electron (IPC)
 ├── hooks/             # Hooks de UI (seleção múltipla, toast, mobile)
@@ -57,8 +57,8 @@ Salvar/abrir arquivo é a exceção: o componente chama `projectStorage.save(pro
 
 ## Como adicionar uma funcionalidade
 
-- **Nova regra de negócio** (ex.: "duração mínima de um pacote"): função pura em `domain/`, teste em `domain/__tests__/`, uso no schema de `validation.ts` ou no reducer.
-- **Nova operação sobre o projeto** (ex.: "duplicar pacote"): ação no `project-reducer.ts`, comando no `use-project.ts`, teste do reducer, botão no componente.
+- **Nova regra de negócio** (ex.: "duração mínima de uma tarefa"): função pura em `domain/`, teste em `domain/__tests__/`, uso no schema de `validation.ts` ou no reducer.
+- **Nova operação sobre o projeto** (ex.: "duplicar tarefa"): ação no `project-reducer.ts`, comando no `use-project.ts`, teste do reducer, botão no componente.
 - **Nova forma de persistir** (ex.: salvar na nuvem): novo adapter implementando `ProjectStorage` em `infrastructure/`. Nada mais muda.
 - **Mudança no formato .engsched**: subir `PROJECT_FILE_VERSION` e tratar o caso em `migrateProjectFile()`. Nunca quebrar arquivos antigos.
 
@@ -73,7 +73,7 @@ Cobrem `domain/` e `application/` por completo. A interface é validada manualme
 
 ## Linguagem ubíqua
 
-O termo de negócio é **Tarefa** (antes "Pacote de serviço"). A interface já usa "Tarefa". No código os identificadores ainda são `ServicePackage*` e a chave do arquivo `.engsched` é `servicePackages`; alinhar o código ao termo (`Task*`, chave `tasks` com migração do formato para 1.2) é uma refatoração mecânica pendente, a fazer numa versão própria.
+O termo de negócio é **Tarefa** (antes "Pacote de serviço"). Interface, código (`Task*`), ações do reducer (`task/saved`), arquivos (`task-form.tsx`) e a chave `tasks` do `.engsched` usam o mesmo termo. `deserializeProject` ainda lê a chave antiga `servicePackages` dos formatos 1.0 e 1.1.
 
 ## Próximos passos possíveis
 

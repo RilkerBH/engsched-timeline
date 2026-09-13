@@ -1,6 +1,6 @@
 # EngSched Timeline
 
-Aplicativo para criação e visualização de cronogramas de engenharia em formato de timeline (Gantt simplificado). Permite organizar pacotes de serviços, marcos (milestones) e exportar o cronograma como imagem.
+Aplicativo para criação e visualização de cronogramas de engenharia em formato de timeline (Gantt simplificado). Permite organizar tarefas, marcos (milestones) e exportar o cronograma como imagem.
 
 ## Tech Stack
 
@@ -62,7 +62,7 @@ public/              # Assets estáticos
 ## Funcionalidades
 
 - Configuração de período do projeto (data início/fim)
-- Tarefas (pacotes de serviço) com cores, datas e posicionamento customizável
+- Tarefas com cores, datas e posicionamento customizável
 - Marcos (milestones) na timeline
 - Seletor de cores estilo Excel (cores do tema, cores padrão e código hexadecimal)
 - Seleção múltipla de tarefas e marcos (clique, Ctrl+clique, Shift+clique) com edição em bloco: cor, formato de data, mover como bloco, deslocar datas, excluir

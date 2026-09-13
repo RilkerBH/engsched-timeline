@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import type { MilestoneData, ServicePackageData } from "@/domain/types";
+import type { MilestoneData, TaskData } from "@/domain/types";
 import {
   LABEL_LAYOUT,
   ZERO_OFFSETS,
   migrateMilestoneLabelOffsets,
-  migratePackageLabelOffsets,
+  migrateTaskLabelOffsets,
   resetLabelOffsets,
 } from "@/domain/label-layout";
 
-const basePkg: ServicePackageData = {
+const baseTask: TaskData = {
   id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01",
   color: "#000", height: 32, showTextInside: false,
   labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0,
@@ -20,25 +20,25 @@ const baseMs: MilestoneData = {
 
 describe("resetLabelOffsets", () => {
   it("zeroes every offset", () => {
-    expect(resetLabelOffsets({ ...basePkg, labelOffsetX: 9, dateLabelOffsetY: -4 })).toMatchObject(ZERO_OFFSETS);
+    expect(resetLabelOffsets({ ...baseTask, labelOffsetX: 9, dateLabelOffsetY: -4 })).toMatchObject(ZERO_OFFSETS);
   });
 });
 
-describe("migratePackageLabelOffsets (schema 1 -> 2)", () => {
+describe("migrateTaskLabelOffsets (schema 1 -> 2)", () => {
   it("maps the legacy defaults to zero", () => {
-    const legacy = { ...basePkg, labelOffsetX: 10, labelOffsetY: 0, dateLabelOffsetX: 10, dateLabelOffsetY: 15 };
-    expect(migratePackageLabelOffsets(legacy)).toMatchObject(ZERO_OFFSETS);
+    const legacy = { ...baseTask, labelOffsetX: 10, labelOffsetY: 0, dateLabelOffsetX: 10, dateLabelOffsetY: 15 };
+    expect(migrateTaskLabelOffsets(legacy)).toMatchObject(ZERO_OFFSETS);
   });
 
   it("treats missing offsets as the legacy defaults", () => {
-    const { labelOffsetX, labelOffsetY, dateLabelOffsetX, dateLabelOffsetY, ...noOffsets } = basePkg;
-    expect(migratePackageLabelOffsets(noOffsets as ServicePackageData)).toMatchObject(ZERO_OFFSETS);
+    const { labelOffsetX, labelOffsetY, dateLabelOffsetX, dateLabelOffsetY, ...noOffsets } = baseTask;
+    expect(migrateTaskLabelOffsets(noOffsets as TaskData)).toMatchObject(ZERO_OFFSETS);
   });
 
   it("preserves the on-screen position of custom offsets in outside mode", () => {
-    const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.package.outside;
-    const custom = { ...basePkg, labelOffsetX: 20, labelOffsetY: -5, dateLabelOffsetX: 12, dateLabelOffsetY: 20 };
-    const m = migratePackageLabelOffsets(custom);
+    const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.task.outside;
+    const custom = { ...baseTask, labelOffsetX: 20, labelOffsetY: -5, dateLabelOffsetX: 12, dateLabelOffsetY: 20 };
+    const m = migrateTaskLabelOffsets(custom);
     // legacy name x = barEnd + 20 + 8 ; new = barEnd + gapX + offX
     expect(gapX + m.labelOffsetX).toBe(28);
     // legacy name baseline = center - 8 - 5 ; new = center - nameAboveCenter + offY
@@ -50,9 +50,9 @@ describe("migratePackageLabelOffsets (schema 1 -> 2)", () => {
   });
 
   it("preserves the on-screen position of custom offsets in inside mode", () => {
-    const { dateBelowBar } = LABEL_LAYOUT.package.inside;
-    const custom = { ...basePkg, showTextInside: true, labelOffsetX: 3, labelOffsetY: 2, dateLabelOffsetX: 0, dateLabelOffsetY: 6 };
-    const m = migratePackageLabelOffsets(custom);
+    const { dateBelowBar } = LABEL_LAYOUT.task.inside;
+    const custom = { ...baseTask, showTextInside: true, labelOffsetX: 3, labelOffsetY: 2, dateLabelOffsetX: 0, dateLabelOffsetY: 6 };
+    const m = migrateTaskLabelOffsets(custom);
     expect(m.labelOffsetX).toBe(3);
     expect(m.labelOffsetY).toBe(2);
     // legacy date top = barBottom + 4 + 6 ; new = barBottom + dateBelowBar + offY

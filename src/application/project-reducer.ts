@@ -1,13 +1,13 @@
-import type { MilestoneData, ProjectFile, ProjectSettings, ServicePackageData } from "@/domain/types";
+import type { MilestoneData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
 import {
   type BulkPatch,
   type Selection,
   applyPatch,
-  movePackagesBlock,
+  moveTasksBlock,
   shiftMilestoneDates,
-  shiftPackageDates,
+  shiftTaskDates,
 } from "@/domain/bulk";
-import { ZERO_OFFSETS, migrateMilestoneLabelOffsets, migratePackageLabelOffsets } from "@/domain/label-layout";
+import { ZERO_OFFSETS, migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "@/domain/label-layout";
 
 /**
  * Single source of truth for a project. Every change goes through
@@ -16,25 +16,25 @@ import { ZERO_OFFSETS, migrateMilestoneLabelOffsets, migratePackageLabelOffsets 
  */
 export interface ProjectState {
   settings: ProjectSettings | null;
-  packages: ServicePackageData[];
+  tasks: TaskData[];
   milestones: MilestoneData[];
 }
 
 export const INITIAL_PROJECT_STATE: ProjectState = {
   settings: null,
-  packages: [],
+  tasks: [],
   milestones: [],
 };
 
 export type LabelKind = "name" | "date";
-export type ItemKind = "package" | "milestone";
+export type ItemKind = "task" | "milestone";
 
 export type ProjectAction =
   | { type: "project/configured"; settings: Omit<ProjectSettings, "id">; id: string }
   | { type: "project/loaded"; file: ProjectFile }
   | { type: "project/reset" }
-  | { type: "package/saved"; pkg: ServicePackageData }
-  | { type: "package/deleted"; id: string }
+  | { type: "task/saved"; task: TaskData }
+  | { type: "task/deleted"; id: string }
   | { type: "milestone/saved"; milestone: MilestoneData }
   | { type: "milestone/deleted"; id: string }
   | { type: "label/dragged"; item: ItemKind; label: LabelKind; id: string; delta: { x: number; y: number } }
@@ -42,14 +42,14 @@ export type ProjectAction =
   | { type: "items/labelsReset"; ids: Selection }
   | { type: "items/datesShifted"; ids: Selection; days: number }
   | { type: "items/deleted"; ids: Selection }
-  | { type: "packages/moved"; ids: string[]; direction: "up" | "down" }
+  | { type: "tasks/moved"; ids: string[]; direction: "up" | "down" }
   | { type: "labels/migrated" };
 
-function nextOrder(packages: ServicePackageData[]): number {
-  return packages.length > 0 ? Math.max(...packages.map(p => p.order)) + 1 : 0;
+function nextOrder(tasks: TaskData[]): number {
+  return tasks.length > 0 ? Math.max(...tasks.map(p => p.order)) + 1 : 0;
 }
 
-function dragLabel<T extends ServicePackageData | MilestoneData>(item: T, label: LabelKind, delta: { x: number; y: number }): T {
+function dragLabel<T extends TaskData | MilestoneData>(item: T, label: LabelKind, delta: { x: number; y: number }): T {
   if (label === "name") {
     return { ...item, labelOffsetX: (item.labelOffsetX || 0) + delta.x, labelOffsetY: (item.labelOffsetY || 0) + delta.y };
   }
@@ -64,23 +64,23 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
     case "project/loaded":
       return {
         settings: action.file.projectSettings,
-        packages: action.file.servicePackages,
+        tasks: action.file.tasks,
         milestones: action.file.milestones,
       };
 
     case "project/reset":
       return INITIAL_PROJECT_STATE;
 
-    case "package/saved": {
-      const exists = state.packages.some(p => p.id === action.pkg.id);
-      const packages = exists
-        ? state.packages.map(p => (p.id === action.pkg.id ? action.pkg : p))
-        : [...state.packages, { ...action.pkg, order: nextOrder(state.packages) }];
-      return { ...state, packages };
+    case "task/saved": {
+      const exists = state.tasks.some(p => p.id === action.task.id);
+      const tasks = exists
+        ? state.tasks.map(p => (p.id === action.task.id ? action.task : p))
+        : [...state.tasks, { ...action.task, order: nextOrder(state.tasks) }];
+      return { ...state, tasks };
     }
 
-    case "package/deleted":
-      return { ...state, packages: state.packages.filter(p => p.id !== action.id) };
+    case "task/deleted":
+      return { ...state, tasks: state.tasks.filter(p => p.id !== action.id) };
 
     case "milestone/saved": {
       const exists = state.milestones.some(m => m.id === action.milestone.id);
@@ -94,17 +94,17 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
       return { ...state, milestones: state.milestones.filter(m => m.id !== action.id) };
 
     case "label/dragged":
-      if (action.item === "package") {
-        return { ...state, packages: state.packages.map(p => (p.id === action.id ? dragLabel(p, action.label, action.delta) : p)) };
+      if (action.item === "task") {
+        return { ...state, tasks: state.tasks.map(p => (p.id === action.id ? dragLabel(p, action.label, action.delta) : p)) };
       }
       return { ...state, milestones: state.milestones.map(m => (m.id === action.id ? dragLabel(m, action.label, action.delta) : m)) };
 
     case "items/patched": {
-      // showTextInside only exists on packages; the other fields are shared
+      // showTextInside only exists on tasks; the other fields are shared
       const { showTextInside, height, ...shared } = action.patch;
       return {
         ...state,
-        packages: applyPatch<ServicePackageData>(state.packages, action.ids.packages, action.patch),
+        tasks: applyPatch<TaskData>(state.tasks, action.ids.tasks, action.patch),
         milestones: applyPatch<MilestoneData>(state.milestones, action.ids.milestones, shared),
       };
     }
@@ -112,7 +112,7 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
     case "items/labelsReset":
       return {
         ...state,
-        packages: applyPatch(state.packages, action.ids.packages, { ...ZERO_OFFSETS }),
+        tasks: applyPatch(state.tasks, action.ids.tasks, { ...ZERO_OFFSETS }),
         milestones: applyPatch(state.milestones, action.ids.milestones, { ...ZERO_OFFSETS }),
       };
 
@@ -121,28 +121,28 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
       const { startDate, endDate } = state.settings;
       return {
         ...state,
-        packages: shiftPackageDates(state.packages, action.ids.packages, action.days, startDate, endDate).items,
+        tasks: shiftTaskDates(state.tasks, action.ids.tasks, action.days, startDate, endDate).items,
         milestones: shiftMilestoneDates(state.milestones, action.ids.milestones, action.days, startDate, endDate).items,
       };
     }
 
     case "items/deleted": {
-      const pk = new Set(action.ids.packages);
+      const pk = new Set(action.ids.tasks);
       const ms = new Set(action.ids.milestones);
       return {
         ...state,
-        packages: state.packages.filter(p => !pk.has(p.id)),
+        tasks: state.tasks.filter(p => !pk.has(p.id)),
         milestones: state.milestones.filter(m => !ms.has(m.id)),
       };
     }
 
-    case "packages/moved":
-      return { ...state, packages: movePackagesBlock(state.packages, action.ids, action.direction) };
+    case "tasks/moved":
+      return { ...state, tasks: moveTasksBlock(state.tasks, action.ids, action.direction) };
 
     case "labels/migrated":
       return {
         ...state,
-        packages: state.packages.map(migratePackageLabelOffsets),
+        tasks: state.tasks.map(migrateTaskLabelOffsets),
         milestones: state.milestones.map(migrateMilestoneLabelOffsets),
       };
 

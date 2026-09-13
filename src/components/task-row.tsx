@@ -1,6 +1,6 @@
 "use client"
 
-import type { ServicePackageData } from "@/domain/types"
+import type { TaskData } from "@/domain/types"
 import { useDraggable } from "@dnd-kit/core"
 import { ArrowDown, ArrowUp } from "lucide-react"
 import { Button } from "./ui/button"
@@ -10,47 +10,47 @@ import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { LABEL_LAYOUT } from "@/domain/label-layout"
 
-type ServicePackageRowProps = {
-  packageData: ServicePackageData & { left: number; width: number; top: number; }
+type TaskRowProps = {
+  task: TaskData & { left: number; width: number; top: number; }
   onDoubleClick: () => void
   onOrderChange: (direction: 'up' | 'down') => void
   selected?: boolean
   onSelect?: (event: React.MouseEvent) => void
 }
 
-export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, selected = false, onSelect }: ServicePackageRowProps) {
+export function TaskRow({ task, onDoubleClick, onOrderChange, selected = false, onSelect }: TaskRowProps) {
   const nameDraggable = useDraggable({
-    id: `name-package-${packageData.id}`,
+    id: `name-task-${task.id}`,
     data: {
-      type: 'name-package',
-      id: packageData.id,
-      initialCoordinates: { x: packageData.labelOffsetX, y: packageData.labelOffsetY }
+      type: 'name-task',
+      id: task.id,
+      initialCoordinates: { x: task.labelOffsetX, y: task.labelOffsetY }
     }
   });
   
   const dateDraggable = useDraggable({
-    id: `date-package-${packageData.id}`,
+    id: `date-task-${task.id}`,
     data: {
-      type: 'date-package',
-      id: packageData.id,
-      initialCoordinates: { x: packageData.dateLabelOffsetX, y: packageData.dateLabelOffsetY }
+      type: 'date-task',
+      id: task.id,
+      initialCoordinates: { x: task.dateLabelOffsetX, y: task.dateLabelOffsetY }
     }
   });
 
-  const displayFormat = packageData.dateFormat === 'MMM/yy' ? 'MMM/yy' : 'dd/MM/yyyy';
-  const formattedStartDate = format(parseISO(packageData.startDate), displayFormat, { locale: ptBR });
-  const formattedEndDate = format(parseISO(packageData.endDate), displayFormat, { locale: ptBR });
+  const displayFormat = task.dateFormat === 'MMM/yy' ? 'MMM/yy' : 'dd/MM/yyyy';
+  const formattedStartDate = format(parseISO(task.startDate), displayFormat, { locale: ptBR });
+  const formattedEndDate = format(parseISO(task.endDate), displayFormat, { locale: ptBR });
   const formattedDateRange = `${formattedStartDate} - ${formattedEndDate}`;
 
-  const tooltipStartDate = format(parseISO(packageData.startDate), 'dd/MM/yyyy', { locale: ptBR });
-  const tooltipEndDate = format(parseISO(packageData.endDate), 'dd/MM/yyyy', { locale: ptBR });
+  const tooltipStartDate = format(parseISO(task.startDate), 'dd/MM/yyyy', { locale: ptBR });
+  const tooltipEndDate = format(parseISO(task.endDate), 'dd/MM/yyyy', { locale: ptBR });
   const tooltipDateRange = `${tooltipStartDate} - ${tooltipEndDate}`;
 
 
   const nameDndTransform = nameDraggable.transform ? ` translate3d(${nameDraggable.transform.x}px, ${nameDraggable.transform.y}px, 0)` : '';
   const nameLabelStyle: React.CSSProperties = {
     position: 'absolute',
-    whiteSpace: packageData.preventNameLineBreak ? 'nowrap' : 'pre-wrap',
+    whiteSpace: task.preventNameLineBreak ? 'nowrap' : 'pre-wrap',
     zIndex: nameDraggable.transform ? 1000 : undefined,
   };
 
@@ -62,13 +62,13 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
     zIndex: dateDraggable.transform ? 1000 : undefined,
   };
 
-  const offX = packageData.labelOffsetX || 0;
-  const offY = packageData.labelOffsetY || 0;
-  const dOffX = packageData.dateLabelOffsetX || 0;
-  const dOffY = packageData.dateLabelOffsetY || 0;
+  const offX = task.labelOffsetX || 0;
+  const offY = task.labelOffsetY || 0;
+  const dOffX = task.dateLabelOffsetX || 0;
+  const dOffY = task.dateLabelOffsetY || 0;
 
-  if (packageData.showTextInside) {
-    const { dateBelowBar } = LABEL_LAYOUT.package.inside;
+  if (task.showTextInside) {
+    const { dateBelowBar } = LABEL_LAYOUT.task.inside;
     // Name centered inside the bar
     nameLabelStyle.top = `50%`;
     nameLabelStyle.left = `50%`;
@@ -82,7 +82,7 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
     dateLabelStyle.transform = `translateX(-50%) ${dateDndTransform}`;
     dateLabelStyle.textAlign = 'center';
   } else {
-    const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.package.outside;
+    const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.task.outside;
     // Name to the right of the bar, text baseline just above the vertical center
     nameLabelStyle.top = `50%`;
     nameLabelStyle.left = `calc(100% + ${gapX + offX}px)`;
@@ -101,10 +101,10 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
     <div
       style={{
         position: 'absolute',
-        top: `${packageData.top}px`,
-        left: `${packageData.left}%`,
-        width: `${packageData.width}%`,
-        height: `${packageData.height}px`,
+        top: `${task.top}px`,
+        left: `${task.left}%`,
+        width: `${task.width}%`,
+        height: `${task.height}px`,
       }}
       className="group z-20"
       data-keep-selection
@@ -117,7 +117,7 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
                 "h-full w-full rounded-md shadow-md transition-all duration-150 flex items-center justify-center overflow-hidden cursor-pointer",
                 selected && "ring-2 ring-offset-2 ring-primary"
               )}
-              style={{ backgroundColor: packageData.color }}
+              style={{ backgroundColor: task.color }}
               onClick={(e) => onSelect?.(e)}
               onDoubleClick={onDoubleClick}
             >
@@ -132,7 +132,7 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
             </div>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="font-bold">{packageData.name}</p>
+            <p className="font-bold">{task.name}</p>
             <p>{tooltipDateRange}</p>
           </TooltipContent>
         </Tooltip>
@@ -148,11 +148,11 @@ export function ServicePackageRow({ packageData, onDoubleClick, onOrderChange, s
         }}
         className={cn(
           "text-xs font-medium leading-4 cursor-grab active:cursor-grabbing",
-          packageData.showTextInside ? "text-white" : "text-foreground"
+          task.showTextInside ? "text-white" : "text-foreground"
         )}
         style={nameLabelStyle}
       >
-        {packageData.name}
+        {task.name}
       </div>
 
       <div

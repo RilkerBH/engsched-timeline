@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { MilestoneData, ServicePackageData } from "@/domain/types";
-import { EMPTY_SELECTION, type Selection, rangeSelectPackages, selectionSize, toggleId } from "@/domain/bulk";
+import type { MilestoneData, TaskData } from "@/domain/types";
+import { EMPTY_SELECTION, type Selection, rangeSelectTasks, selectionSize, toggleId } from "@/domain/bulk";
 
 type Modifiers = { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
 
@@ -10,38 +10,38 @@ type Modifiers = { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean };
  * UI state for multi-selection on the timeline. Ids of deleted items are
  * pruned automatically. Keyboard: Esc clears, Delete/Backspace asks to delete.
  */
-export function useSelection(packages: ServicePackageData[], milestones: MilestoneData[], onDeleteRequest: () => void) {
+export function useSelection(tasks: TaskData[], milestones: MilestoneData[], onDeleteRequest: () => void) {
   const [raw, setRaw] = useState<Selection>(EMPTY_SELECTION);
 
   const selection = useMemo<Selection>(() => ({
-    packages: raw.packages.filter(id => packages.some(p => p.id === id)),
+    tasks: raw.tasks.filter(id => tasks.some(p => p.id === id)),
     milestones: raw.milestones.filter(id => milestones.some(m => m.id === id)),
-  }), [raw, packages, milestones]);
+  }), [raw, tasks, milestones]);
 
   const hasSelection = selectionSize(selection) > 0;
 
   const clear = useCallback(() => setRaw(EMPTY_SELECTION), []);
 
-  const selectPackage = useCallback((id: string, e: Modifiers) => {
+  const selectTask = useCallback((id: string, e: Modifiers) => {
     setRaw(sel => {
-      if (e.shiftKey) return { ...sel, packages: rangeSelectPackages(packages, sel.packages, id) };
-      if (e.ctrlKey || e.metaKey) return { ...sel, packages: toggleId(sel.packages, id) };
-      const isOnlyOne = selectionSize(sel) === 1 && sel.packages[0] === id;
-      return isOnlyOne ? EMPTY_SELECTION : { packages: [id], milestones: [] };
+      if (e.shiftKey) return { ...sel, tasks: rangeSelectTasks(tasks, sel.tasks, id) };
+      if (e.ctrlKey || e.metaKey) return { ...sel, tasks: toggleId(sel.tasks, id) };
+      const isOnlyOne = selectionSize(sel) === 1 && sel.tasks[0] === id;
+      return isOnlyOne ? EMPTY_SELECTION : { tasks: [id], milestones: [] };
     });
-  }, [packages]);
+  }, [tasks]);
 
   const selectMilestone = useCallback((id: string, e: Modifiers) => {
     setRaw(sel => {
       if (e.ctrlKey || e.metaKey || e.shiftKey) return { ...sel, milestones: toggleId(sel.milestones, id) };
       const isOnlyOne = selectionSize(sel) === 1 && sel.milestones[0] === id;
-      return isOnlyOne ? EMPTY_SELECTION : { packages: [], milestones: [id] };
+      return isOnlyOne ? EMPTY_SELECTION : { tasks: [], milestones: [id] };
     });
   }, []);
 
   const selectAll = useCallback(() => {
-    setRaw({ packages: packages.map(p => p.id), milestones: milestones.map(m => m.id) });
-  }, [packages, milestones]);
+    setRaw({ tasks: tasks.map(p => p.id), milestones: milestones.map(m => m.id) });
+  }, [tasks, milestones]);
 
   useEffect(() => {
     if (!hasSelection) return;
@@ -59,5 +59,5 @@ export function useSelection(packages: ServicePackageData[], milestones: Milesto
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [hasSelection, clear, onDeleteRequest]);
 
-  return { selection, hasSelection, clear, selectPackage, selectMilestone, selectAll };
+  return { selection, hasSelection, clear, selectTask, selectMilestone, selectAll };
 }

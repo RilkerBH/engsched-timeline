@@ -1,20 +1,20 @@
 import { addDays, format, parseISO } from "date-fns";
-import type { MilestoneData, ServicePackageData } from "./types";
+import type { MilestoneData, TaskData } from "./types";
 
 /**
- * Pure functions for bulk operations on packages and milestones.
+ * Pure functions for bulk operations on tasks and milestones.
  * No React or global state dependencies.
  */
 
 export interface Selection {
-  packages: string[];
+  tasks: string[];
   milestones: string[];
 }
 
-export const EMPTY_SELECTION: Selection = { packages: [], milestones: [] };
+export const EMPTY_SELECTION: Selection = { tasks: [], milestones: [] };
 
 export function selectionSize(sel: Selection): number {
-  return sel.packages.length + sel.milestones.length;
+  return sel.tasks.length + sel.milestones.length;
 }
 
 export function toggleId(ids: string[], id: string): string[] {
@@ -22,15 +22,15 @@ export function toggleId(ids: string[], id: string): string[] {
 }
 
 /**
- * Range selection (Shift+click) between the last selected package and the
- * target, following the visual order of the packages.
+ * Range selection (Shift+click) between the last selected task and the
+ * target, following the visual order of the tasks.
  */
-export function rangeSelectPackages(
-  packages: ServicePackageData[],
+export function rangeSelectTasks(
+  tasks: TaskData[],
   currentSelection: string[],
   targetId: string
 ): string[] {
-  const ordered = [...packages].sort((a, b) => a.order - b.order).map(p => p.id);
+  const ordered = [...tasks].sort((a, b) => a.order - b.order).map(p => p.id);
   const anchorId = currentSelection[currentSelection.length - 1];
   const anchorIdx = ordered.indexOf(anchorId);
   const targetIdx = ordered.indexOf(targetId);
@@ -41,16 +41,16 @@ export function rangeSelectPackages(
 }
 
 /**
- * Moves the selected packages one position up/down as a block, preserving
+ * Moves the selected tasks one position up/down as a block, preserving
  * their relative order. Returns a new list with `order` renumbered 0..n-1.
  */
-export function movePackagesBlock(
-  packages: ServicePackageData[],
+export function moveTasksBlock(
+  tasks: TaskData[],
   selectedIds: string[],
   direction: "up" | "down"
-): ServicePackageData[] {
+): TaskData[] {
   const selected = new Set(selectedIds);
-  const ordered = [...packages].sort((a, b) => a.order - b.order);
+  const ordered = [...tasks].sort((a, b) => a.order - b.order);
 
   if (direction === "up") {
     for (let i = 1; i < ordered.length; i++) {
@@ -70,7 +70,7 @@ export function movePackagesBlock(
 }
 
 export type BulkPatch = Partial<
-  Pick<ServicePackageData, "color" | "dateFormat" | "showTextInside" | "preventNameLineBreak" | "height">
+  Pick<TaskData, "color" | "dateFormat" | "showTextInside" | "preventNameLineBreak" | "height">
 >;
 
 export function applyPatch<T extends { id: string }>(items: T[], ids: string[], patch: Partial<T>): T[] {
@@ -89,20 +89,20 @@ export interface ShiftResult<T> {
 }
 
 /**
- * Shifts the dates of the selected packages by N days (positive = forward).
+ * Shifts the dates of the selected tasks by N days (positive = forward).
  * Items that would leave the project range are left untouched and reported
  * in `outOfRange`.
  */
-export function shiftPackageDates(
-  packages: ServicePackageData[],
+export function shiftTaskDates(
+  tasks: TaskData[],
   ids: string[],
   days: number,
   projectStart: string,
   projectEnd: string
-): ShiftResult<ServicePackageData> {
+): ShiftResult<TaskData> {
   const set = new Set(ids);
   const outOfRange: string[] = [];
-  const items = packages.map(p => {
+  const items = tasks.map(p => {
     if (!set.has(p.id) || days === 0) return p;
     const startDate = shiftIso(p.startDate, days);
     const endDate = shiftIso(p.endDate, days);

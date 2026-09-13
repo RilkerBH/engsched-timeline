@@ -5,7 +5,7 @@ import { isValidHex } from "./colors";
  * Validation rules shared by the forms. Messages are user-facing (pt-BR).
  */
 
-export const PACKAGE_HEIGHT = { min: 16, max: 80 } as const;
+export const TASK_HEIGHT = { min: 16, max: 80 } as const;
 export const MILESTONE_HEIGHT = { min: 20, max: 60 } as const;
 export const DATE_FORMATS = ["dd/MM/yyyy", "MMM/yy"] as const;
 
@@ -43,13 +43,13 @@ export const projectSettingsSchema = z.object({
 
 export type ProjectSettingsInput = z.infer<typeof projectSettingsSchema>;
 
-export function servicePackageSchema(project: DateRange) {
+export function taskSchema(project: DateRange) {
   return z.object({
     name: z.string().min(1, MESSAGES.nameRequired),
     startDate: z.string(),
     endDate: z.string(),
     color: z.string().refine(isValidHex, MESSAGES.invalidColor),
-    height: z.number().min(PACKAGE_HEIGHT.min).max(PACKAGE_HEIGHT.max),
+    height: z.number().min(TASK_HEIGHT.min).max(TASK_HEIGHT.max),
     showTextInside: z.boolean(),
     preventNameLineBreak: z.boolean().optional(),
     dateFormat: z.enum(DATE_FORMATS).optional(),
@@ -66,7 +66,7 @@ export function servicePackageSchema(project: DateRange) {
   });
 }
 
-export type ServicePackageInput = z.infer<ReturnType<typeof servicePackageSchema>>;
+export type TaskInput = z.infer<ReturnType<typeof taskSchema>>;
 
 export function milestoneSchema(project: DateRange) {
   return z.object({

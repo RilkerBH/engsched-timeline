@@ -17,7 +17,7 @@ describe("loadPersistedState", () => {
 
   it("round-trips through persistState", () => {
     const store = memoryStore();
-    const state = { settings, packages: [], milestones: [] };
+    const state = { settings, tasks: [], milestones: [] };
     persistState(store, state);
     expect(loadPersistedState(store)).toEqual(state);
   });
@@ -30,7 +30,7 @@ describe("loadPersistedState", () => {
     });
     const state = loadPersistedState(store);
     expect(state.settings).toEqual(settings);
-    expect(state.packages[0]).toMatchObject({ labelOffsetX: 0, dateLabelOffsetY: 0 });
+    expect(state.tasks[0]).toMatchObject({ labelOffsetX: 0, dateLabelOffsetY: 0 });
   });
 
   it("does not re-migrate schema 1 data already at label schema 2", () => {
@@ -38,7 +38,14 @@ describe("loadPersistedState", () => {
       "engsched-packages": JSON.stringify([{ id: "a", labelOffsetX: 10, labelOffsetY: 0, dateLabelOffsetX: 10, dateLabelOffsetY: 15 }]),
       "engsched-label-schema": "2",
     });
-    expect(loadPersistedState(store).packages[0].labelOffsetX).toBe(10);
+    expect(loadPersistedState(store).tasks[0].labelOffsetX).toBe(10);
+  });
+
+  it("converts a schema 2 payload (packages -> tasks)", () => {
+    const store = memoryStore({ [PROJECT_STORAGE_KEY]: JSON.stringify({ schema: 2, state: { settings, packages: [{ id: "a" }], milestones: [] } }) });
+    const state = loadPersistedState(store);
+    expect(state.tasks).toEqual([{ id: "a" }]);
+    expect(state).not.toHaveProperty("packages");
   });
 
   it("ignores corrupt data", () => {

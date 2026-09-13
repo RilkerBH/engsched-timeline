@@ -4,16 +4,17 @@ import { INITIAL_PROJECT_STATE, type ProjectState, projectReducer } from "./proj
 /**
  * Autosave of the project state in the browser's localStorage.
  *
- * Storage schema 2 keeps the whole state under one key. Schema 1 (up to app
- * v1.6.0) used three separate keys plus a label-schema marker; it is read
- * once and converted on first load.
+ * Storage schema 3 keeps the whole state under one key with a "tasks" field.
+ * Schema 2 (app v1.6.1 to v1.7.0) used the same key with a "packages" field.
+ * Schema 1 (up to app v1.6.0) used three separate keys plus a label-schema
+ * marker. Older schemas are read once and converted on first load.
  */
 export const PROJECT_STORAGE_KEY = "engsched-project";
-export const PROJECT_STORAGE_SCHEMA = 2;
+export const PROJECT_STORAGE_SCHEMA = 3;
 
 const LEGACY_KEYS = {
   settings: "engsched-settings",
-  packages: "engsched-packages",
+  tasks: "engsched-packages",
   milestones: "engsched-milestones",
   labelSchema: "engsched-label-schema",
 } as const;
@@ -21,6 +22,12 @@ const LEGACY_KEYS = {
 interface PersistedProject {
   schema: number;
   state: ProjectState;
+}
+
+/** Schema 2 payload: identical to schema 3 except the tasks field was named "packages". */
+interface PersistedProjectV2 {
+  schema: 2;
+  state: { settings: ProjectState["settings"]; packages: ProjectState["tasks"]; milestones: ProjectState["milestones"] };
 }
 
 export interface KeyValueStore {
@@ -40,13 +47,13 @@ function parse<T>(raw: string | null, fallback: T): T {
 /** Reads the state from schema 1 keys, migrating label offsets when needed. */
 function loadLegacyState(store: KeyValueStore): ProjectState | null {
   const settings = parse(store.getItem(LEGACY_KEYS.settings), null);
-  const packages = parse(store.getItem(LEGACY_KEYS.packages), null);
+  const tasks = parse(store.getItem(LEGACY_KEYS.tasks), null);
   const milestones = parse(store.getItem(LEGACY_KEYS.milestones), null);
-  if (settings === null && packages === null && milestones === null) return null;
+  if (settings === null && tasks === null && milestones === null) return null;
 
   const state: ProjectState = {
     settings: settings ?? null,
-    packages: Array.isArray(packages) ? packages : [],
+    tasks: Array.isArray(tasks) ? tasks : [],
     milestones: Array.isArray(milestones) ? milestones : [],
   };
   const labelSchema = Number(store.getItem(LEGACY_KEYS.labelSchema) || "1");
@@ -56,9 +63,13 @@ function loadLegacyState(store: KeyValueStore): ProjectState | null {
 export function loadPersistedState(store: KeyValueStore | undefined): ProjectState {
   if (!store) return INITIAL_PROJECT_STATE;
   try {
-    const current = parse<PersistedProject | null>(store.getItem(PROJECT_STORAGE_KEY), null);
+    const current = parse<PersistedProject | PersistedProjectV2 | null>(store.getItem(PROJECT_STORAGE_KEY), null);
     if (current && current.schema === PROJECT_STORAGE_SCHEMA && current.state) {
-      return { ...INITIAL_PROJECT_STATE, ...current.state };
+      return { ...INITIAL_PROJECT_STATE, ...(current as PersistedProject).state };
+    }
+    if (current && current.schema === 2 && current.state) {
+      const { packages, ...rest } = (current as PersistedProjectV2).state;
+      return { ...INITIAL_PROJECT_STATE, ...rest, tasks: Array.isArray(packages) ? packages : [] };
     }
     return loadLegacyState(store) ?? INITIAL_PROJECT_STATE;
   } catch (error) {

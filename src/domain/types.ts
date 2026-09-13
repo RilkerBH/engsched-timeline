@@ -5,7 +5,7 @@ export interface ProjectSettings {
   endDate: string;     // YYYY-MM-DD (UTC)
 }
 
-export interface ServicePackageData {
+export interface TaskData {
   id: string;
   name: string;
   startDate: string;
@@ -40,6 +40,6 @@ export interface ProjectFile {
   version: string;
   exportedAt: string;
   projectSettings: ProjectSettings | null;
-  servicePackages: ServicePackageData[];
+  tasks: TaskData[];
   milestones: MilestoneData[];
 }

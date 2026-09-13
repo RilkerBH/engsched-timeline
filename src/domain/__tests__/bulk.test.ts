@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { MilestoneData, ServicePackageData } from "@/domain/types";
+import type { MilestoneData, TaskData } from "@/domain/types";
 import {
   applyPatch,
-  movePackagesBlock,
-  rangeSelectPackages,
+  moveTasksBlock,
+  rangeSelectTasks,
   selectionSize,
   shiftMilestoneDates,
-  shiftPackageDates,
+  shiftTaskDates,
   toggleId,
 } from "@/domain/bulk";
 
-const pkg = (id: string, order: number, extra: Partial<ServicePackageData> = {}): ServicePackageData => ({
+const task = (id: string, order: number, extra: Partial<TaskData> = {}): TaskData => ({
   id, name: id, order,
   startDate: "2026-03-01", endDate: "2026-03-31",
   color: "#000000", height: 32, showTextInside: false,
@@ -23,7 +23,7 @@ const ms = (id: string, date: string): MilestoneData => ({
   labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0,
 });
 
-const orderOf = (list: ServicePackageData[]) => [...list].sort((a, b) => a.order - b.order).map(p => p.id);
+const orderOf = (list: TaskData[]) => [...list].sort((a, b) => a.order - b.order).map(p => p.id);
 
 describe("selection helpers", () => {
   it("toggleId adds and removes", () => {
@@ -32,39 +32,39 @@ describe("selection helpers", () => {
   });
 
   it("selectionSize counts both kinds", () => {
-    expect(selectionSize({ packages: ["a"], milestones: ["m", "n"] })).toBe(3);
+    expect(selectionSize({ tasks: ["a"], milestones: ["m", "n"] })).toBe(3);
   });
 
-  it("rangeSelectPackages selects the visual range from the last selected item", () => {
-    const list = [pkg("a", 0), pkg("b", 1), pkg("c", 2), pkg("d", 3)];
-    expect(rangeSelectPackages(list, ["a"], "c")).toEqual(["a", "b", "c"]);
-    expect(rangeSelectPackages(list, ["d"], "b")).toEqual(["d", "b", "c"]);
+  it("rangeSelectTasks selects the visual range from the last selected item", () => {
+    const list = [task("a", 0), task("b", 1), task("c", 2), task("d", 3)];
+    expect(rangeSelectTasks(list, ["a"], "c")).toEqual(["a", "b", "c"]);
+    expect(rangeSelectTasks(list, ["d"], "b")).toEqual(["d", "b", "c"]);
   });
 
-  it("rangeSelectPackages falls back to toggle when there is no anchor", () => {
-    const list = [pkg("a", 0), pkg("b", 1)];
-    expect(rangeSelectPackages(list, [], "b")).toEqual(["b"]);
+  it("rangeSelectTasks falls back to toggle when there is no anchor", () => {
+    const list = [task("a", 0), task("b", 1)];
+    expect(rangeSelectTasks(list, [], "b")).toEqual(["b"]);
   });
 });
 
-describe("movePackagesBlock", () => {
-  const list = [pkg("a", 0), pkg("b", 1), pkg("c", 2), pkg("d", 3)];
+describe("moveTasksBlock", () => {
+  const list = [task("a", 0), task("b", 1), task("c", 2), task("d", 3)];
 
   it("moves a contiguous block up keeping relative order", () => {
-    expect(orderOf(movePackagesBlock(list, ["b", "c"], "up"))).toEqual(["b", "c", "a", "d"]);
+    expect(orderOf(moveTasksBlock(list, ["b", "c"], "up"))).toEqual(["b", "c", "a", "d"]);
   });
 
   it("moves a non-contiguous block down", () => {
-    expect(orderOf(movePackagesBlock(list, ["a", "c"], "down"))).toEqual(["b", "a", "d", "c"]);
+    expect(orderOf(moveTasksBlock(list, ["a", "c"], "down"))).toEqual(["b", "a", "d", "c"]);
   });
 
   it("leaves items already at the edge in place", () => {
-    expect(orderOf(movePackagesBlock(list, ["a", "d"], "down"))).toEqual(["b", "a", "c", "d"]);
-    expect(orderOf(movePackagesBlock(list, ["a"], "up"))).toEqual(["a", "b", "c", "d"]);
+    expect(orderOf(moveTasksBlock(list, ["a", "d"], "down"))).toEqual(["b", "a", "c", "d"]);
+    expect(orderOf(moveTasksBlock(list, ["a"], "up"))).toEqual(["a", "b", "c", "d"]);
   });
 
   it("renumbers order 0..n-1 without mutating the input", () => {
-    const result = movePackagesBlock(list, ["d"], "up");
+    const result = moveTasksBlock(list, ["d"], "up");
     expect(result.map(p => p.order)).toEqual([0, 1, 2, 3]);
     expect(list.map(p => p.order)).toEqual([0, 1, 2, 3]);
   });
@@ -72,35 +72,35 @@ describe("movePackagesBlock", () => {
 
 describe("applyPatch", () => {
   it("applies the patch only to the given ids", () => {
-    const list = [pkg("a", 0), pkg("b", 1)];
+    const list = [task("a", 0), task("b", 1)];
     const result = applyPatch(list, ["b"], { color: "#FF0000" });
     expect(result[0].color).toBe("#000000");
     expect(result[1].color).toBe("#FF0000");
   });
 });
 
-describe("shiftPackageDates", () => {
+describe("shiftTaskDates", () => {
   const range = ["2026-01-01", "2026-12-31"] as const;
 
   it("shifts start and end by N days", () => {
-    const { items, outOfRange } = shiftPackageDates([pkg("a", 0)], ["a"], 10, ...range);
+    const { items, outOfRange } = shiftTaskDates([task("a", 0)], ["a"], 10, ...range);
     expect(items[0]).toMatchObject({ startDate: "2026-03-11", endDate: "2026-04-10" });
     expect(outOfRange).toEqual([]);
   });
 
   it("supports negative shifts across month boundaries", () => {
-    const { items } = shiftPackageDates([pkg("a", 0)], ["a"], -1, ...range);
+    const { items } = shiftTaskDates([task("a", 0)], ["a"], -1, ...range);
     expect(items[0].startDate).toBe("2026-02-28");
   });
 
   it("keeps items that would leave the project range and reports them", () => {
-    const { items, outOfRange } = shiftPackageDates([pkg("a", 0)], ["a"], 300, ...range);
+    const { items, outOfRange } = shiftTaskDates([task("a", 0)], ["a"], 300, ...range);
     expect(items[0].startDate).toBe("2026-03-01");
     expect(outOfRange).toEqual(["a"]);
   });
 
   it("ignores unselected items", () => {
-    const { items } = shiftPackageDates([pkg("a", 0), pkg("b", 1)], ["a"], 5, ...range);
+    const { items } = shiftTaskDates([task("a", 0), task("b", 1)], ["a"], 5, ...range);
     expect(items[1].startDate).toBe("2026-03-01");
   });
 });

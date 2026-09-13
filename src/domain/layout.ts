@@ -67,27 +67,27 @@ export function getMonthHeaders(projectStartDateStr: string, projectEndDateStr: 
   });
 }
 
-export interface PackageLayout {
+export interface TaskLayout {
   left: number;   // % of the timeline width
   width: number;  // % of the timeline width
   top: number;    // px from the top of the rows container
 }
 
 /**
- * Stacks packages vertically in `order`, each one `gap` px below the previous.
+ * Stacks tasks vertically in `order`, each one `gap` px below the previous.
  * Returns the rows and the total container height (with a bottom padding of `gap`).
  */
-export function layoutPackageRows<T extends { order: number; height: number; startDate: string; endDate: string }>(
-  packages: T[],
+export function layoutTaskRows<T extends { order: number; height: number; startDate: string; endDate: string }>(
+  tasks: T[],
   projectStartDate: string,
   projectEndDate: string,
   gap: number
-): { rows: (T & PackageLayout)[]; height: number } {
-  const sorted = [...packages].sort((a, b) => a.order - b.order);
+): { rows: (T & TaskLayout)[]; height: number } {
+  const sorted = [...tasks].sort((a, b) => a.order - b.order);
   let top = 0;
-  const rows = sorted.map(pkg => {
-    const row = { ...pkg, ...getPositionAndWidth(pkg.startDate, pkg.endDate, projectStartDate, projectEndDate), top };
-    top += pkg.height + gap;
+  const rows = sorted.map(task => {
+    const row = { ...task, ...getPositionAndWidth(task.startDate, task.endDate, projectStartDate, projectEndDate), top };
+    top += task.height + gap;
     return row;
   });
   const last = rows[rows.length - 1];

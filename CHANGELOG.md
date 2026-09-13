@@ -9,6 +9,25 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.0.0] - 2026-09-13
+
+### Alterado (incompatível)
+
+- O arquivo `.engsched` passa para o formato `1.2`: a chave `servicePackages`
+  foi renomeada para `tasks`. Arquivos dos formatos `1.0` e `1.1` continuam
+  abrindo normalmente (são convertidos ao carregar), mas **arquivos salvos
+  pela 2.0.0 não abrem em versões anteriores do app**. É por isso que a
+  versão maior sobe.
+
+### Interno
+
+- Linguagem ubíqua alinhada: o código passa a falar `Task` em vez de
+  `ServicePackage` (tipos, funções de domínio, ações do reducer, hooks e
+  componentes `task-form.tsx` / `task-row.tsx`).
+- O autosave do navegador passa ao esquema 3 (`tasks`); os esquemas 1 e 2
+  são convertidos na primeira abertura.
+- 66 testes unitários.
+
 ## [1.7.0] - 2026-09-13
 
 ### Alterado
@@ -152,6 +171,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[2.0.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.7.0...v2.0.0
 [1.7.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.5.0...v1.6.0

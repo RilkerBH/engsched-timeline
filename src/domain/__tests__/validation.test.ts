@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MESSAGES, isWithinRange, milestoneSchema, projectSettingsSchema, servicePackageSchema } from "@/domain/validation";
+import { MESSAGES, isWithinRange, milestoneSchema, projectSettingsSchema, taskSchema } from "@/domain/validation";
 
 const project = { startDate: "2026-01-01", endDate: "2026-12-31" };
 const firstMessage = (r: { success: boolean; error?: { issues: { message: string; path: (string | number)[] }[] } }) =>
@@ -24,11 +24,11 @@ describe("projectSettingsSchema", () => {
   });
 });
 
-describe("servicePackageSchema", () => {
+describe("taskSchema", () => {
   const valid = { name: "a", startDate: "2026-02-01", endDate: "2026-02-01", color: "#4472C4", height: 32, showTextInside: false };
-  const schema = servicePackageSchema(project);
+  const schema = taskSchema(project);
 
-  it("accepts a single-day package inside the project", () => {
+  it("accepts a single-day task inside the project", () => {
     expect(schema.safeParse(valid).success).toBe(true);
   });
 

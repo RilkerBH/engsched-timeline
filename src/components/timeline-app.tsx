@@ -5,9 +5,9 @@ import { DndContext, type DragEndEvent } from "@dnd-kit/core"
 import { toPng } from "html-to-image"
 import { format } from "date-fns"
 
-import type { ProjectSettings, ServicePackageData, MilestoneData } from "@/domain/types"
+import type { ProjectSettings, TaskData, MilestoneData } from "@/domain/types"
 import { selectionSize } from "@/domain/bulk"
-import { layoutPackageRows } from "@/domain/layout"
+import { layoutTaskRows } from "@/domain/layout"
 import { useProject } from "@/application/use-project"
 import { getProjectStorage } from "@/infrastructure/project-storage"
 import { useSelection } from "@/hooks/use-selection"
@@ -16,8 +16,8 @@ import { ProjectSettingsForm } from "./project-settings-form"
 import { ProjectSettingsDialog } from "./project-settings-dialog"
 import { TimelineControls } from "./timeline-controls"
 import { TimelineHeader } from "./timeline-header"
-import { ServicePackageRow } from "./service-package-row"
-import { ServicePackageForm } from "./service-package-form"
+import { TaskRow } from "./task-row"
+import { TaskForm } from "./task-form"
 import { MilestoneForm } from "./milestone-form"
 import { SelectionToolbar } from "./selection-toolbar"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
@@ -29,21 +29,21 @@ const projectStorage = getProjectStorage()
 export default function TimelineApp() {
   const [isClient, setIsClient] = useState(false)
   const project = useProject()
-  const { settings, packages, milestones } = project
+  const { settings, tasks, milestones } = project
   const { toast } = useToast()
 
   const [isResetAlertOpen, setIsResetAlertOpen] = useState(false)
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
-  const [editingPackage, setEditingPackage] = useState<ServicePackageData | undefined>(undefined)
-  const [isPackageFormOpen, setIsPackageFormOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<TaskData | undefined>(undefined)
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false)
   const [editingMilestone, setEditingMilestone] = useState<MilestoneData | undefined>(undefined)
   const [isMilestoneFormOpen, setIsMilestoneFormOpen] = useState(false)
 
   const exportableAreaRef = useRef<HTMLDivElement>(null)
 
   const requestBulkDelete = useCallback(() => setIsBulkDeleteAlertOpen(true), [])
-  const sel = useSelection(packages, milestones, requestBulkDelete)
+  const sel = useSelection(tasks, milestones, requestBulkDelete)
   const { selection, hasSelection } = sel
 
   useEffect(() => {
@@ -116,18 +116,18 @@ export default function TimelineApp() {
   const handleLabelDragEnd = (event: DragEndEvent) => {
     const [label, item, ...rest] = event.active.id.toString().split("-")
     const id = rest.join("-")
-    if ((label !== "name" && label !== "date") || (item !== "package" && item !== "milestone") || !id) return
+    if ((label !== "name" && label !== "date") || (item !== "task" && item !== "milestone") || !id) return
     project.dragLabel(item, label, id, event.delta)
   }
 
-  const handlePackageSubmit = (data: ServicePackageData) => {
-    const exists = packages.some(p => p.id === data.id)
-    project.savePackage(data)
+  const handleTaskSubmit = (data: TaskData) => {
+    const exists = tasks.some(p => p.id === data.id)
+    project.saveTask(data)
     toast({ title: exists ? "Tarefa Atualizada" : "Tarefa Criada" })
   }
 
-  const handleDeletePackage = (id: string) => {
-    project.deletePackage(id)
+  const handleDeleteTask = (id: string) => {
+    project.deleteTask(id)
     toast({ title: "Tarefa Excluída", variant: "destructive" })
   }
 
@@ -189,8 +189,8 @@ export default function TimelineApp() {
   // ----- Layout -----
 
   const { rows, height: rowsHeight } = useMemo(
-    () => settings ? layoutPackageRows(packages, settings.startDate, settings.endDate, ROW_GAP) : { rows: [], height: ROW_GAP },
-    [packages, settings]
+    () => settings ? layoutTaskRows(tasks, settings.startDate, settings.endDate, ROW_GAP) : { rows: [], height: ROW_GAP },
+    [tasks, settings]
   )
 
   if (!isClient) {
@@ -228,17 +228,17 @@ export default function TimelineApp() {
                 onSelectMilestone={sel.selectMilestone}
               />
               <div className="relative" style={{ height: `${rowsHeight}px` }}>
-                {rows.map(pkg => (
-                  <ServicePackageRow
-                    key={pkg.id}
-                    packageData={pkg}
+                {rows.map(task => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
                     onDoubleClick={() => {
-                      setEditingPackage(pkg)
-                      setIsPackageFormOpen(true)
+                      setEditingTask(task)
+                      setIsTaskFormOpen(true)
                     }}
-                    onOrderChange={(dir) => project.movePackages([pkg.id], dir)}
-                    selected={selection.packages.includes(pkg.id)}
-                    onSelect={(e) => sel.selectPackage(pkg.id, e)}
+                    onOrderChange={(dir) => project.moveTasks([task.id], dir)}
+                    selected={selection.tasks.includes(task.id)}
+                    onSelect={(e) => sel.selectTask(task.id, e)}
                   />
                 ))}
               </div>
@@ -250,13 +250,13 @@ export default function TimelineApp() {
       {hasSelection && (
         <SelectionToolbar
           selection={selection}
-          totalPackages={packages.length}
+          totalTasks={tasks.length}
           totalMilestones={milestones.length}
           onClear={sel.clear}
           onSelectAll={sel.selectAll}
           onColor={handleBulkColor}
           onDateFormat={handleBulkDateFormat}
-          onMove={(dir) => project.movePackages(selection.packages, dir)}
+          onMove={(dir) => project.moveTasks(selection.tasks, dir)}
           onShiftDates={handleBulkShiftDates}
           onShowTextInside={(showTextInside) => project.patchItems(selection, { showTextInside })}
           onPreventLineBreak={(preventNameLineBreak) => project.patchItems(selection, { preventNameLineBreak })}
@@ -268,7 +268,7 @@ export default function TimelineApp() {
       <TimelineControls
         onExport={handleExport}
         onReset={() => setIsResetAlertOpen(true)}
-        onAddPackage={() => { setEditingPackage(undefined); setIsPackageFormOpen(true) }}
+        onAddTask={() => { setEditingTask(undefined); setIsTaskFormOpen(true) }}
         onAddMilestone={() => { setEditingMilestone(undefined); setIsMilestoneFormOpen(true) }}
         onEditProject={() => setIsSettingsDialogOpen(true)}
         onSaveProject={handleSaveProject}
@@ -282,14 +282,14 @@ export default function TimelineApp() {
         defaultValues={settings}
       />
 
-      {isPackageFormOpen && (
-        <ServicePackageForm
-          isOpen={isPackageFormOpen}
-          onClose={() => setIsPackageFormOpen(false)}
-          onSubmit={handlePackageSubmit}
-          onDelete={handleDeletePackage}
+      {isTaskFormOpen && (
+        <TaskForm
+          isOpen={isTaskFormOpen}
+          onClose={() => setIsTaskFormOpen(false)}
+          onSubmit={handleTaskSubmit}
+          onDelete={handleDeleteTask}
           projectSettings={settings}
-          defaultValues={editingPackage}
+          defaultValues={editingTask}
         />
       )}
 
