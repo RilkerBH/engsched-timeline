@@ -42,5 +42,4 @@ export interface ProjectFile {
   projectSettings: ProjectSettings | null;
   servicePackages: ServicePackageData[];
   milestones: MilestoneData[];
-  zoom: number;
 }

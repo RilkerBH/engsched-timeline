@@ -16,7 +16,7 @@ Características que pesam na decisão:
 - **Um único contexto delimitado** (cronograma), sem backend, sem integrações, um desenvolvedor.
 - **Invariantes simples**: datas dentro do período do projeto, `order` único, cor em hex.
 - **Zero testes automatizados.**
-- **Estado espalhado**: `projectSettings`, `servicePackages`, `milestones` e `zoom` são quatro `useState`/`useLocalStorage` independentes. Carregar um arquivo faz quatro `set`s separados; o `zoom` vai para o arquivo mas não para o `localStorage`.
+- **Estado espalhado**: `projectSettings`, `servicePackages` e `milestones` são três `useLocalStorage` independentes. Carregar um arquivo faz três `set`s separados, sem garantia de atomicidade.
 - **Componente-deus**: cada funcionalidade nova cresce o `timeline-app.tsx` (a seleção múltipla adicionou ~150 linhas nele).
 - **Formato de arquivo sem migração**: `version: "1.0"` é gravado, mas nada o interpreta. Na primeira mudança incompatível do `.engsched` não há onde colocar a migração.
 

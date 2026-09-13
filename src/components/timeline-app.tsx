@@ -54,7 +54,6 @@ export default function TimelineApp() {
   const [projectSettings, setProjectSettings] = useLocalStorage<ProjectSettings | null>("engsched-settings", null)
   const [servicePackages, setServicePackages] = useLocalStorage<ServicePackageData[]>("engsched-packages", [])
   const [milestones, setMilestones] = useLocalStorage<MilestoneData[]>("engsched-milestones", [])
-  const [zoom, setZoom] = useState(100)
 
   const [isResetAlertOpen, setIsResetAlertOpen] = useState(false)
   const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false)
@@ -98,7 +97,6 @@ export default function TimelineApp() {
     setProjectSettings(null)
     setServicePackages([])
     setMilestones([])
-    setZoom(100)
     setIsResetAlertOpen(false)
     toast({ title: "Cronograma Resetado", description: "Todos os dados foram apagados." })
   }
@@ -134,7 +132,7 @@ export default function TimelineApp() {
   }
 
   const handleSaveProject = async () => {
-    const project = createProjectFile(projectSettings, servicePackages, milestones, zoom);
+    const project = createProjectFile(projectSettings, servicePackages, milestones);
     try {
       if (isElectron()) {
         const saved = await saveProjectElectron(project);
@@ -163,7 +161,6 @@ export default function TimelineApp() {
       setProjectSettings(project.projectSettings);
       setServicePackages(project.servicePackages);
       setMilestones(project.milestones);
-      setZoom(project.zoom);
       toast({ title: "Projeto Carregado!", description: "Todos os dados foram restaurados." });
     } catch (err: any) {
       if (err?.message === "cancelled") return;
@@ -440,7 +437,7 @@ export default function TimelineApp() {
   return (
     <div className="p-4 md:p-8">
       <div ref={exportableAreaRef} className="w-full overflow-x-auto py-4 bg-white" onClick={handleBackgroundClick}>
-        <div style={{ width: `${zoom}%`, minWidth: '100%' }}>
+        <div className="w-full">
           <DndContext onDragEnd={handleLabelDragEnd}>
             <div className="w-full px-[5%]">
               <header className="mb-4">
@@ -495,8 +492,6 @@ export default function TimelineApp() {
       )}
 
       <TimelineControls
-        zoom={zoom}
-        setZoom={setZoom}
         onExport={handleExport}
         onReset={() => setIsResetAlertOpen(true)}
         onAddPackage={() => { setEditingPackage(undefined); setIsPackageFormOpen(true); }}

@@ -9,6 +9,15 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [1.5.0] - 2026-09-13
+
+### Removido
+
+- Controle de zoom da linha do tempo (botões, slider e "Reset Zoom"). A linha
+  do tempo passa a ocupar sempre 100% da largura disponível. O campo `zoom`
+  deixa de ser gravado no arquivo `.engsched`; arquivos antigos que ainda o
+  contêm continuam abrindo normalmente (o campo é ignorado).
+
 ## [1.4.0] - 2026-09-13
 
 ### Alterado
@@ -95,6 +104,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[1.5.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.1.0...v1.2.0

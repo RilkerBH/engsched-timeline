@@ -22,8 +22,7 @@ export function isElectron(): boolean {
 export function createProjectFile(
   projectSettings: ProjectSettings | null,
   servicePackages: ServicePackageData[],
-  milestones: MilestoneData[],
-  zoom: number
+  milestones: MilestoneData[]
 ): ProjectFile {
   return {
     version: PROJECT_FILE_VERSION,
@@ -31,7 +30,6 @@ export function createProjectFile(
     projectSettings,
     servicePackages,
     milestones,
-    zoom,
   };
 }
 
@@ -71,7 +69,7 @@ export function deserializeProject(json: string): ProjectFile {
     projectSettings: data.projectSettings ?? null,
     servicePackages: data.servicePackages,
     milestones: data.milestones,
-    zoom: typeof data.zoom === "number" ? data.zoom : 100,
+    // O campo "zoom" de arquivos antigos é ignorado (removido na v1.5.0)
   });
 }
 

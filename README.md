@@ -60,7 +60,6 @@ public/             # Assets estáticos
 - Seleção múltipla (clique, Ctrl+clique, Shift+clique) com edição em bloco: cor, formato de data, mover como bloco, deslocar datas, excluir
 - Rótulos de nome e data em posição padrão alinhada, com ajuste fino por arrastar e opção de redefinir
 - Drag and drop para reordenar pacotes
-- Zoom na timeline
 - Exportação como imagem PNG
 - Salvar/carregar projetos (arquivo `.engsched`), inclusive a partir da tela inicial
 - Funciona no navegador e como app desktop
