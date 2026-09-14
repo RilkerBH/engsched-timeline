@@ -1,52 +1,29 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
-import { Plus, Minus, RefreshCw, Download, PlusCircle, Milestone, Settings, Save, FolderOpen } from "lucide-react"
+import { RefreshCw, Download, PlusCircle, Milestone, Settings, Save, FolderOpen } from "lucide-react"
 
 type TimelineControlsProps = {
-  zoom: number
-  setZoom: (zoom: number) => void
   onExport: () => void
   onReset: () => void
-  onAddPackage: () => void
+  onAddTask: () => void
   onAddMilestone: () => void
   onEditProject: () => void
   onSaveProject: () => void
   onLoadProject: () => void
 }
 
-export function TimelineControls({ zoom, setZoom, onExport, onReset, onAddPackage, onAddMilestone, onEditProject, onSaveProject, onLoadProject }: TimelineControlsProps) {
+export function TimelineControls({ onExport, onReset, onAddTask, onAddMilestone, onEditProject, onSaveProject, onLoadProject }: TimelineControlsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-card rounded-b-lg border-t-0 border">
       <div className="flex items-center gap-2">
-         <Button onClick={onAddPackage} size="sm">
+         <Button onClick={onAddTask} size="sm">
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Pacote
+          Nova Tarefa
         </Button>
         <Button onClick={onAddMilestone} size="sm" variant="outline">
           <Milestone className="mr-2 h-4 w-4" />
-          Add Marco
-        </Button>
-      </div>
-      <div className="flex items-center gap-4 flex-grow justify-center min-w-[300px]">
-        <Button size="icon" variant="ghost" onClick={() => setZoom(Math.max(10, zoom - 10))}>
-          <Minus className="h-4 w-4" />
-        </Button>
-        <Slider
-          value={[zoom]}
-          onValueChange={(value) => setZoom(value[0])}
-          min={10}
-          max={300}
-          step={10}
-          className="w-48"
-        />
-        <Button size="icon" variant="ghost" onClick={() => setZoom(Math.min(300, zoom + 10))}>
-          <Plus className="h-4 w-4" />
-        </Button>
-        <span className="text-sm font-mono w-12 text-center">{zoom}%</span>
-        <Button variant="outline" size="sm" onClick={() => setZoom(100)}>
-          Reset Zoom
+          Novo Marco
         </Button>
       </div>
       <div className="flex items-center gap-2">

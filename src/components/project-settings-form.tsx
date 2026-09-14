@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -13,27 +12,22 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import type { ProjectSettings } from "@/lib/types"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { FolderOpen } from "lucide-react"
+import type { ProjectSettings } from "@/domain/types"
+import { type ProjectSettingsInput, projectSettingsSchema } from "@/domain/validation"
 
-const formSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
-}).refine(data => new Date(data.startDate) < new Date(data.endDate), {
-  message: "End date must be after start date",
-  path: ["endDate"],
-});
 
 type ProjectSettingsFormProps = {
   onSubmit: (data: Omit<ProjectSettings, 'id'>) => void;
+  onLoadProject?: () => void;
 }
 
-export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+export function ProjectSettingsForm({ onSubmit, onLoadProject }: ProjectSettingsFormProps) {
+  const form = useForm<ProjectSettingsInput>({
+    resolver: zodResolver(projectSettingsSchema),
     defaultValues: {
-      title: "New Engineering Project",
+      title: "Novo Projeto de Engenharia",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
     },
@@ -43,8 +37,8 @@ export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">Project Setup</CardTitle>
-          <CardDescription>Configure your new engineering timeline.</CardDescription>
+          <CardTitle className="font-headline text-2xl">Novo Projeto</CardTitle>
+          <CardDescription>Configure o período do seu cronograma de engenharia.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -54,9 +48,9 @@ export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Project Title</FormLabel>
+                    <FormLabel>Título do Projeto</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Q3 Feature Launch" {...field} />
+                      <Input placeholder="ex.: Obra Residencial Alfa" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -68,7 +62,7 @@ export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
                   name="startDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Start Date</FormLabel>
+                      <FormLabel>Data de Início</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -81,7 +75,7 @@ export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
                   name="endDate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>End Date</FormLabel>
+                      <FormLabel>Data Final</FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -90,10 +84,23 @@ export function ProjectSettingsForm({ onSubmit }: ProjectSettingsFormProps) {
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full">Create Project</Button>
+              <Button type="submit" className="w-full">Criar Projeto</Button>
             </form>
           </Form>
         </CardContent>
+        {onLoadProject && (
+          <CardFooter className="flex flex-col gap-3 border-t pt-4">
+            <div className="flex w-full items-center gap-2 text-xs text-muted-foreground">
+              <div className="h-px flex-1 bg-border" />
+              <span>ou</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <Button type="button" variant="outline" className="w-full" onClick={onLoadProject}>
+              <FolderOpen className="mr-2 h-4 w-4" />
+              Abrir projeto existente (.engsched)
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     </div>
   )

@@ -1,258 +1,197 @@
 "use client"
 
-import { useState, useRef, useMemo, useEffect } from "react"
+import { useState, useRef, useMemo, useEffect, useCallback } from "react"
 import { DndContext, type DragEndEvent } from "@dnd-kit/core"
 import { toPng } from "html-to-image"
-import { format, parseISO } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { format } from "date-fns"
 
-import type { ProjectSettings, ServicePackageData, MilestoneData } from "@/lib/types"
-import {
-  createProjectFile,
-  isElectron,
-  saveProjectWeb,
-  loadProjectWeb,
-  saveProjectElectron,
-  loadProjectElectron,
-} from "@/lib/project-file"
-import useLocalStorage from "@/hooks/use-local-storage"
+import type { ProjectSettings, TaskData, MilestoneData } from "@/domain/types"
+import { selectionSize } from "@/domain/bulk"
+import { layoutTaskRows } from "@/domain/layout"
+import { useProject } from "@/application/use-project"
+import { getProjectStorage } from "@/infrastructure/project-storage"
+import { useSelection } from "@/hooks/use-selection"
+import { useToast } from "@/hooks/use-toast"
 import { ProjectSettingsForm } from "./project-settings-form"
+import { ProjectSettingsDialog } from "./project-settings-dialog"
 import { TimelineControls } from "./timeline-controls"
 import { TimelineHeader } from "./timeline-header"
-import { ServicePackageRow } from "./service-package-row"
-import { ServicePackageForm } from "./service-package-form"
+import { TaskRow } from "./task-row"
+import { TaskForm } from "./task-form"
 import { MilestoneForm } from "./milestone-form"
-import { getPositionAndWidth } from "@/lib/utils"
+import { SelectionToolbar } from "./selection-toolbar"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
-import { useToast } from "@/hooks/use-toast"
 import { Skeleton } from "./ui/skeleton"
-import { ProjectSettingsDialog } from "./project-settings-dialog"
 
+const ROW_GAP = 20
+const projectStorage = getProjectStorage()
 
 export default function TimelineApp() {
   const [isClient, setIsClient] = useState(false)
-  const [projectSettings, setProjectSettings] = useLocalStorage<ProjectSettings | null>("engsched-settings", null)
-  const [servicePackages, setServicePackages] = useLocalStorage<ServicePackageData[]>("engsched-packages", [])
-  const [milestones, setMilestones] = useLocalStorage<MilestoneData[]>("engsched-milestones", [])
-  const [zoom, setZoom] = useState(100)
+  const project = useProject()
+  const { settings, tasks, milestones } = project
+  const { toast } = useToast()
 
   const [isResetAlertOpen, setIsResetAlertOpen] = useState(false)
+  const [isBulkDeleteAlertOpen, setIsBulkDeleteAlertOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
-  const [editingPackage, setEditingPackage] = useState<ServicePackageData | undefined>(undefined)
-  const [isPackageFormOpen, setIsPackageFormOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<TaskData | undefined>(undefined)
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false)
   const [editingMilestone, setEditingMilestone] = useState<MilestoneData | undefined>(undefined)
   const [isMilestoneFormOpen, setIsMilestoneFormOpen] = useState(false)
-  
+
   const exportableAreaRef = useRef<HTMLDivElement>(null)
-  const timelineContainerRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast()
-  const GAP = 20;
+
+  const requestBulkDelete = useCallback(() => setIsBulkDeleteAlertOpen(true), [])
+  const sel = useSelection(tasks, milestones, requestBulkDelete)
+  const { selection, hasSelection } = sel
 
   useEffect(() => {
     setIsClient(true)
   }, [])
 
-  const handleProjectSettingsSubmit = (data: Omit<ProjectSettings, 'id'>) => {
-    const isEditing = !!projectSettings;
-    setProjectSettings({ ...data, id: projectSettings?.id || crypto.randomUUID() })
-    toast({ title: isEditing ? "Projeto Atualizado!" : "Projeto Criado!", description: isEditing ? "As configurações do projeto foram salvas." : "Você pode agora adicionar pacotes e marcos." })
+  // ----- Project -----
+
+  const handleProjectSettingsSubmit = (data: Omit<ProjectSettings, "id">) => {
+    const isEditing = !!settings
+    project.configureProject(data)
+    toast({
+      title: isEditing ? "Projeto Atualizado!" : "Projeto Criado!",
+      description: isEditing ? "As configurações do projeto foram salvas." : "Você pode agora adicionar tarefas e marcos.",
+    })
   }
 
   const handleReset = () => {
-    setProjectSettings(null)
-    setServicePackages([])
-    setMilestones([])
-    setZoom(100)
+    project.resetProject()
     setIsResetAlertOpen(false)
     toast({ title: "Cronograma Resetado", description: "Todos os dados foram apagados." })
   }
 
-  const handleExport = () => {
-    if (exportableAreaRef.current) {
-      const title = projectSettings?.title.replace(/\s+/g, '_') || 'timeline';
-      const date = format(new Date(), 'yyyyMMdd_HHmm');
-
-      toPng(exportableAreaRef.current, {
-        pixelRatio: 2,
-        backgroundColor: '#FFFFFF',
-        style: {
-          overflow: 'visible',
-        }
-      }).then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = `cronograma-${title}-${date}.png`;
-        link.href = dataUrl;
-        link.click();
-        toast({ title: "Sucesso!", description: "Cronograma exportado como PNG." });
-      }).catch(() => {
-        toast({ variant: "destructive", title: "Erro", description: "Não foi possível exportar o cronograma." });
-      });
-    } else {
-        toast({ variant: "destructive", title: "Erro", description: "Não foi possível encontrar o elemento do cronograma para exportar." });
+  const handleSaveProject = async () => {
+    try {
+      const saved = await projectStorage.save(project.toProjectFile())
+      if (saved) toast({ title: "Projeto Salvo!", description: "Arquivo salvo com sucesso." })
+    } catch {
+      toast({ variant: "destructive", title: "Erro", description: "Não foi possível salvar o projeto." })
     }
   }
-
-  const handleSaveProject = async () => {
-    const project = createProjectFile(projectSettings, servicePackages, milestones, zoom);
-    try {
-      if (isElectron()) {
-        const saved = await saveProjectElectron(project);
-        if (saved) {
-          toast({ title: "Projeto Salvo!", description: "Arquivo salvo com sucesso." });
-        }
-      } else {
-        saveProjectWeb(project);
-        toast({ title: "Projeto Salvo!", description: "Arquivo baixado com sucesso." });
-      }
-    } catch {
-      toast({ variant: "destructive", title: "Erro", description: "Não foi possível salvar o projeto." });
-    }
-  };
 
   const handleLoadProject = async () => {
     try {
-      let project;
-      if (isElectron()) {
-        project = await loadProjectElectron();
-      } else {
-        project = await loadProjectWeb();
-      }
-      if (!project) return;
-
-      setProjectSettings(project.projectSettings);
-      setServicePackages(project.servicePackages);
-      setMilestones(project.milestones);
-      setZoom(project.zoom);
-      toast({ title: "Projeto Carregado!", description: "Todos os dados foram restaurados." });
+      const file = await projectStorage.load()
+      if (!file) return
+      project.loadProject(file)
+      toast({ title: "Projeto Carregado!", description: "Todos os dados foram restaurados." })
     } catch (err: any) {
-      if (err?.message === "cancelled") return;
-      toast({ variant: "destructive", title: "Erro ao Abrir", description: err?.message || "Arquivo de projeto inválido." });
+      toast({ variant: "destructive", title: "Erro ao Abrir", description: err?.message || "Arquivo de projeto inválido." })
     }
-  };
+  }
+
+  const handleExport = async () => {
+    if (hasSelection) {
+      // Drop the selection highlight before capturing the image
+      sel.clear()
+      await new Promise(resolve => setTimeout(resolve, 50))
+    }
+    if (!exportableAreaRef.current) {
+      toast({ variant: "destructive", title: "Erro", description: "Não foi possível encontrar o elemento do cronograma para exportar." })
+      return
+    }
+    const title = settings?.title.replace(/\s+/g, "_") || "timeline"
+    const date = format(new Date(), "yyyyMMdd_HHmm")
+    try {
+      const dataUrl = await toPng(exportableAreaRef.current, { pixelRatio: 2, backgroundColor: "#FFFFFF", style: { overflow: "visible" } })
+      const link = document.createElement("a")
+      link.download = `cronograma-${title}-${date}.png`
+      link.href = dataUrl
+      link.click()
+      toast({ title: "Sucesso!", description: "Cronograma exportado como PNG." })
+    } catch {
+      toast({ variant: "destructive", title: "Erro", description: "Não foi possível exportar o cronograma." })
+    }
+  }
+
+  // ----- Items -----
 
   const handleLabelDragEnd = (event: DragEndEvent) => {
-    const { active, delta } = event;
-    const activeId = active.id.toString();
+    const [label, item, ...rest] = event.active.id.toString().split("-")
+    const id = rest.join("-")
+    if ((label !== "name" && label !== "date") || (item !== "task" && item !== "milestone") || !id) return
+    project.dragLabel(item, label, id, event.delta)
+  }
 
-    const parts = activeId.split('-');
-    if (parts.length < 3) return;
+  const handleTaskSubmit = (data: TaskData) => {
+    const exists = tasks.some(p => p.id === data.id)
+    project.saveTask(data)
+    toast({ title: exists ? "Tarefa Atualizada" : "Tarefa Criada" })
+  }
 
-    const labelType = parts[0]; // 'name' or 'date'
-    const itemType = parts[1]; // 'package' or 'milestone'
-    const id = parts.slice(2).join('-');
-
-    if (itemType === 'package') {
-      setServicePackages(pkgs => pkgs.map(p => {
-        if (p.id !== id) return p;
-        if (labelType === 'name') {
-          return {
-            ...p,
-            labelOffsetX: (p.labelOffsetX || 0) + delta.x,
-            labelOffsetY: (p.labelOffsetY || 0) + delta.y
-          };
-        }
-        if (labelType === 'date') {
-          return {
-            ...p,
-            dateLabelOffsetX: (p.dateLabelOffsetX || 0) + delta.x,
-            dateLabelOffsetY: (p.dateLabelOffsetY || 0) + delta.y
-          };
-        }
-        return p;
-      }));
-    } else if (itemType === 'milestone') {
-      setMilestones(ms => ms.map(m => {
-        if (m.id !== id) return m;
-        if (labelType === 'name') {
-          return {
-            ...m,
-            labelOffsetX: (m.labelOffsetX || 0) + delta.x,
-            labelOffsetY: (m.labelOffsetY || 0) + delta.y,
-          };
-        }
-        if (labelType === 'date') {
-          return {
-            ...m,
-            dateLabelOffsetX: (m.dateLabelOffsetX || 0) + delta.x,
-            dateLabelOffsetY: (m.dateLabelOffsetY || 0) + delta.y,
-          };
-        }
-        return m;
-      }));
-    }
-  };
-  
-  const handlePackageSubmit = (data: ServicePackageData) => {
-    const exists = servicePackages.some(p => p.id === data.id);
-    if (exists) {
-      setServicePackages(servicePackages.map(p => p.id === data.id ? data : p));
-      toast({ title: "Pacote Atualizado" });
-    } else {
-      const newOrder = servicePackages.length > 0 ? Math.max(...servicePackages.map(p => p.order)) + 1 : 0;
-      setServicePackages([...servicePackages, {...data, order: newOrder}]);
-      toast({ title: "Pacote Criado" });
-    }
-  };
-
-  const handleDeletePackage = (id: string) => {
-    setServicePackages(servicePackages.filter(p => p.id !== id));
-    toast({ title: "Pacote Deletado", variant: "destructive" });
+  const handleDeleteTask = (id: string) => {
+    project.deleteTask(id)
+    toast({ title: "Tarefa Excluída", variant: "destructive" })
   }
 
   const handleMilestoneSubmit = (data: MilestoneData) => {
-    const exists = milestones.some(m => m.id === data.id);
-    if (exists) {
-        setMilestones(milestones.map(m => m.id === data.id ? data : m));
-        toast({ title: "Marco Atualizado" });
-    } else {
-        setMilestones([...milestones, data]);
-        toast({ title: "Marco Criado" });
-    }
+    const exists = milestones.some(m => m.id === data.id)
+    project.saveMilestone(data)
+    toast({ title: exists ? "Marco Atualizado" : "Marco Criado" })
   }
 
   const handleDeleteMilestone = (id: string) => {
-    setMilestones(milestones.filter(m => m.id !== id));
-    toast({ title: "Marco Deletado", variant: "destructive" });
+    project.deleteMilestone(id)
+    toast({ title: "Marco Deletado", variant: "destructive" })
   }
 
-  const handleOrderChange = (id: string, direction: 'up' | 'down') => {
-    const pkgs = [...servicePackages].sort((a, b) => a.order - b.order);
-    const index = pkgs.findIndex(p => p.id === id);
+  // ----- Bulk actions -----
 
-    if (direction === 'up' && index > 0) {
-      [pkgs[index].order, pkgs[index - 1].order] = [pkgs[index - 1].order, pkgs[index].order];
-    } else if (direction === 'down' && index < pkgs.length - 1) {
-      [pkgs[index].order, pkgs[index + 1].order] = [pkgs[index + 1].order, pkgs[index].order];
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("[data-keep-selection]")) return
+    if (hasSelection) sel.clear()
+  }
+
+  const handleBulkColor = (color: string) => {
+    project.patchItems(selection, { color })
+    toast({ title: "Cor aplicada", description: `${selectionSize(selection)} item(ns) atualizado(s).` })
+  }
+
+  const handleBulkDateFormat = (dateFormat: "dd/MM/yyyy" | "MMM/yy") => {
+    project.patchItems(selection, { dateFormat })
+    toast({ title: "Formato de data aplicado", description: `${selectionSize(selection)} item(ns) atualizado(s).` })
+  }
+
+  const handleBulkShiftDates = (days: number) => {
+    const { moved, skipped } = project.shiftDates(selection, days)
+    const label = days > 0 ? `atrasado(s) ${days} dia(s)` : `adiantado(s) ${-days} dia(s)`
+    if (skipped > 0) {
+      toast({
+        variant: "destructive",
+        title: "Deslocamento parcial",
+        description: `${moved} item(ns) ${label}. ${skipped} item(ns) sairia(m) do período do projeto e não foi/foram alterado(s).`,
+      })
+    } else {
+      toast({ title: "Datas deslocadas", description: `${moved} item(ns) ${label}.` })
     }
-    setServicePackages(pkgs);
-  };
+  }
 
+  const handleBulkResetLabels = () => {
+    project.resetLabels(selection)
+    toast({ title: "Posições redefinidas", description: `${selectionSize(selection)} item(ns) com textos na posição padrão.` })
+  }
 
-  const packagesWithPositions = useMemo(() => {
-    if (!projectSettings) return [];
-    
-    const sortedPackages = [...servicePackages].sort((a, b) => a.order - b.order);
-    
-    let currentTop = 0;
-    
-    return sortedPackages.map(pkg => {
-      const positionAndWidth = getPositionAndWidth(pkg.startDate, pkg.endDate, projectSettings.startDate, projectSettings.endDate);
-      const pkgWithLayout = {
-        ...pkg,
-        ...positionAndWidth,
-        top: currentTop,
-      };
-      currentTop += pkg.height + GAP;
-      return pkgWithLayout;
-    });
-  }, [servicePackages, projectSettings, GAP]);
+  const handleBulkDelete = () => {
+    const total = selectionSize(selection)
+    project.deleteItems(selection)
+    sel.clear()
+    setIsBulkDeleteAlertOpen(false)
+    toast({ title: "Itens excluídos", description: `${total} item(ns) removido(s).`, variant: "destructive" })
+  }
 
-  const timelineContainerHeight = useMemo(() => {
-    if (packagesWithPositions.length === 0) return 20;
-    const lastPackage = packagesWithPositions[packagesWithPositions.length - 1];
-    return lastPackage.top + lastPackage.height + 20; // 20px bottom padding
-  }, [packagesWithPositions]);
+  // ----- Layout -----
 
+  const { rows, height: rowsHeight } = useMemo(
+    () => settings ? layoutTaskRows(tasks, settings.startDate, settings.endDate, ROW_GAP) : { rows: [], height: ROW_GAP },
+    [tasks, settings]
+  )
 
   if (!isClient) {
     return (
@@ -262,40 +201,44 @@ export default function TimelineApp() {
         <Skeleton className="h-24 w-full rounded-lg" />
         <Skeleton className="h-40 w-full rounded-lg" />
       </div>
-    );
+    )
   }
 
-  if (!projectSettings) {
-    return <ProjectSettingsForm onSubmit={handleProjectSettingsSubmit} />;
+  if (!settings) {
+    return <ProjectSettingsForm onSubmit={handleProjectSettingsSubmit} onLoadProject={handleLoadProject} />
   }
-  
+
   return (
     <div className="p-4 md:p-8">
-      <div ref={exportableAreaRef} className="w-full overflow-x-auto py-4 bg-white">
-        <div style={{ width: `${zoom}%`, minWidth: '100%' }}>
+      <div ref={exportableAreaRef} className="w-full overflow-x-auto py-4 bg-white" onClick={handleBackgroundClick}>
+        <div className="w-full">
           <DndContext onDragEnd={handleLabelDragEnd}>
             <div className="w-full px-[5%]">
               <header className="mb-4">
-                <h1 className="font-headline text-3xl font-bold">{projectSettings.title}</h1>
+                <h1 className="font-headline text-3xl font-bold">{settings.title}</h1>
               </header>
-              <TimelineHeader 
-                projectSettings={projectSettings} 
+              <TimelineHeader
+                projectSettings={settings}
                 milestones={milestones}
                 handleEditMilestone={(milestone) => {
-                  setEditingMilestone(milestone);
-                  setIsMilestoneFormOpen(true);
+                  setEditingMilestone(milestone)
+                  setIsMilestoneFormOpen(true)
                 }}
+                selectedMilestoneIds={selection.milestones}
+                onSelectMilestone={sel.selectMilestone}
               />
-              <div ref={timelineContainerRef} className="relative" style={{ height: `${timelineContainerHeight}px` }}>
-                {packagesWithPositions.map(pkg => (
-                  <ServicePackageRow
-                    key={pkg.id}
-                    packageData={pkg}
+              <div className="relative" style={{ height: `${rowsHeight}px` }}>
+                {rows.map(task => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
                     onDoubleClick={() => {
-                      setEditingPackage(pkg);
-                      setIsPackageFormOpen(true);
+                      setEditingTask(task)
+                      setIsTaskFormOpen(true)
                     }}
-                    onOrderChange={(dir) => handleOrderChange(pkg.id, dir)}
+                    onOrderChange={(dir) => project.moveTasks([task.id], dir)}
+                    selected={selection.tasks.includes(task.id)}
+                    onSelect={(e) => sel.selectTask(task.id, e)}
                   />
                 ))}
               </div>
@@ -304,46 +247,77 @@ export default function TimelineApp() {
         </div>
       </div>
 
+      {hasSelection && (
+        <SelectionToolbar
+          selection={selection}
+          totalTasks={tasks.length}
+          totalMilestones={milestones.length}
+          onClear={sel.clear}
+          onSelectAll={sel.selectAll}
+          onColor={handleBulkColor}
+          onDateFormat={handleBulkDateFormat}
+          onMove={(dir) => project.moveTasks(selection.tasks, dir)}
+          onShiftDates={handleBulkShiftDates}
+          onShowTextInside={(showTextInside) => project.patchItems(selection, { showTextInside })}
+          onPreventLineBreak={(preventNameLineBreak) => project.patchItems(selection, { preventNameLineBreak })}
+          onResetLabels={handleBulkResetLabels}
+          onDelete={requestBulkDelete}
+        />
+      )}
+
       <TimelineControls
-        zoom={zoom}
-        setZoom={setZoom}
         onExport={handleExport}
         onReset={() => setIsResetAlertOpen(true)}
-        onAddPackage={() => { setEditingPackage(undefined); setIsPackageFormOpen(true); }}
-        onAddMilestone={() => { setEditingMilestone(undefined); setIsMilestoneFormOpen(true); }}
+        onAddTask={() => { setEditingTask(undefined); setIsTaskFormOpen(true) }}
+        onAddMilestone={() => { setEditingMilestone(undefined); setIsMilestoneFormOpen(true) }}
         onEditProject={() => setIsSettingsDialogOpen(true)}
         onSaveProject={handleSaveProject}
         onLoadProject={handleLoadProject}
       />
-      
+
       <ProjectSettingsDialog
         isOpen={isSettingsDialogOpen}
         onClose={() => setIsSettingsDialogOpen(false)}
         onSubmit={handleProjectSettingsSubmit}
-        defaultValues={projectSettings}
+        defaultValues={settings}
       />
 
-      {isPackageFormOpen && (
-        <ServicePackageForm 
-            isOpen={isPackageFormOpen}
-            onClose={() => setIsPackageFormOpen(false)}
-            onSubmit={handlePackageSubmit}
-            onDelete={handleDeletePackage}
-            projectSettings={projectSettings}
-            defaultValues={editingPackage}
+      {isTaskFormOpen && (
+        <TaskForm
+          isOpen={isTaskFormOpen}
+          onClose={() => setIsTaskFormOpen(false)}
+          onSubmit={handleTaskSubmit}
+          onDelete={handleDeleteTask}
+          projectSettings={settings}
+          defaultValues={editingTask}
         />
       )}
 
       {isMilestoneFormOpen && (
-        <MilestoneForm 
-            isOpen={isMilestoneFormOpen}
-            onClose={() => setIsMilestoneFormOpen(false)}
-            onSubmit={handleMilestoneSubmit}
-            onDelete={handleDeleteMilestone}
-            projectSettings={projectSettings}
-            defaultValues={editingMilestone}
+        <MilestoneForm
+          isOpen={isMilestoneFormOpen}
+          onClose={() => setIsMilestoneFormOpen(false)}
+          onSubmit={handleMilestoneSubmit}
+          onDelete={handleDeleteMilestone}
+          projectSettings={settings}
+          defaultValues={editingMilestone}
         />
       )}
+
+      <AlertDialog open={isBulkDeleteAlertOpen} onOpenChange={setIsBulkDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir itens selecionados?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectionSize(selection)} item(ns) será(ão) removido(s) do cronograma. Essa ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete}>Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={isResetAlertOpen} onOpenChange={setIsResetAlertOpen}>
         <AlertDialogContent>

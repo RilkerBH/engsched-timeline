@@ -16,4 +16,4 @@ dist/
 .DS_Store
 
 # cowork skills (IDE-specific)
-skills/
+/skills/

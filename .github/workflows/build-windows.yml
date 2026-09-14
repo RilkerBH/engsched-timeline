@@ -1,0 +1,56 @@
+name: Build Windows
+
+# Gera o executável Windows (pasta zipada + .exe portátil) num runner Windows,
+# sem depender do Mac. Dispara manualmente (Actions > Build Windows > Run
+# workflow) ou automaticamente quando uma Release é publicada, anexando os
+# arquivos à Release.
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testes
+        run: npm test
+
+      - name: Ler versão
+        id: version
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build estático + empacotar (zip e portátil)
+        run: |
+          npm run build
+          npx electron-builder --win zip portable --x64
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EngSched-Timeline-v${{ steps.version.outputs.version }}-windows
+          path: |
+            dist/*.zip
+            dist/*.exe
+          if-no-files-found: error
+
+      - name: Anexar à Release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/*.zip dist/*.exe --clobber

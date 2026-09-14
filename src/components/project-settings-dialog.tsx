@@ -3,7 +3,6 @@
 import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -22,16 +21,9 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import type { ProjectSettings } from "@/lib/types"
+import type { ProjectSettings } from "@/domain/types"
+import { type ProjectSettingsInput, projectSettingsSchema } from "@/domain/validation"
 
-const formSchema = z.object({
-  title: z.string().min(1, "O título é obrigatório"),
-  startDate: z.string().min(1, "A data de início é obrigatória"),
-  endDate: z.string().min(1, "A data de fim é obrigatória"),
-}).refine(data => new Date(data.startDate) < new Date(data.endDate), {
-  message: "A data final deve ser posterior à data de início",
-  path: ["endDate"],
-});
 
 type ProjectSettingsDialogProps = {
   isOpen: boolean
@@ -41,10 +33,10 @@ type ProjectSettingsDialogProps = {
 }
 
 export function ProjectSettingsDialog({ isOpen, onClose, onSubmit, defaultValues }: ProjectSettingsDialogProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<ProjectSettingsInput>({
+    resolver: zodResolver(projectSettingsSchema),
     defaultValues: {
-      title: "New Engineering Project",
+      title: "Novo Projeto de Engenharia",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0],
       ...defaultValues,
@@ -57,7 +49,7 @@ export function ProjectSettingsDialog({ isOpen, onClose, onSubmit, defaultValues
     }
   }, [defaultValues, form]);
 
-  const handleSubmit = (data: z.infer<typeof formSchema>) => {
+  const handleSubmit = (data: ProjectSettingsInput) => {
     onSubmit(data);
     onClose();
   }

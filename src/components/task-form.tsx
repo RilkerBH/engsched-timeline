@@ -23,40 +23,43 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { MilestoneData } from "@/domain/types"
+import type { TaskData } from "@/domain/types"
 import { useEffect } from "react"
 import { RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
 import { DEFAULT_COLOR } from "@/domain/colors"
-import { MILESTONE_HEIGHT, milestoneSchema } from "@/domain/validation"
+import { TASK_HEIGHT, taskSchema } from "@/domain/validation"
 import { ZERO_OFFSETS } from "@/domain/label-layout"
-import { Switch } from "@/components/ui/switch"
+
 
 
 
 type Props = {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: MilestoneData) => void
+  onSubmit: (data: TaskData) => void
   onDelete?: (id: string) => void
   projectSettings: { startDate: string, endDate: string }
-  defaultValues?: MilestoneData
+  defaultValues?: TaskData
 }
 
-export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSettings, defaultValues }: Props) {
-  const dynamicSchema = milestoneSchema(projectSettings);
-
+export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings, defaultValues }: Props) {
+  const dynamicSchema = taskSchema(projectSettings);
+  
   const initialFormValues = {
     name: "",
-    date: projectSettings.startDate,
+    startDate: projectSettings.startDate,
+    endDate: projectSettings.endDate,
     color: DEFAULT_COLOR,
-    height: 30,
+    height: 32,
+    showTextInside: false,
     ...ZERO_OFFSETS,
     preventNameLineBreak: false,
     dateFormat: 'dd/MM/yyyy' as const,
   };
-
+  
   const form = useForm<z.infer<typeof dynamicSchema>>({
     resolver: zodResolver(dynamicSchema),
     defaultValues: {
@@ -65,20 +68,22 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
     }
   })
-  
+
   useEffect(() => {
     form.reset({
       ...initialFormValues,
       ...(defaultValues || {}),
-      dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
+       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
     });
-  }, [defaultValues, form, projectSettings.startDate]);
+  }, [defaultValues, form, projectSettings.startDate, projectSettings.endDate]);
+
 
   const handleSubmit = (data: z.infer<typeof dynamicSchema>, resetOffsets = false) => {
     onSubmit({
       ...defaultValues,
       ...data,
       id: defaultValues?.id || crypto.randomUUID(),
+      order: defaultValues?.order || 0,
       // Keep manual label position adjustments (or reset them when requested)
       labelOffsetX: resetOffsets ? 0 : (defaultValues?.labelOffsetX ?? 0),
       labelOffsetY: resetOffsets ? 0 : (defaultValues?.labelOffsetY ?? 0),
@@ -97,7 +102,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="font-headline">{defaultValues ? "Editar" : "Novo"} Marco</DialogTitle>
+          <DialogTitle className="font-headline">{defaultValues ? "Editar" : "Nova"} Tarefa</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => handleSubmit(data))} className="space-y-4">
@@ -106,7 +111,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Marco</FormLabel>
+                  <FormLabel>Nome da Tarefa</FormLabel>
                   <FormControl>
                     <Textarea {...field} />
                   </FormControl>
@@ -114,7 +119,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="preventNameLineBreak"
               render={({ field }) => (
@@ -134,10 +139,10 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="date"
+                name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data</FormLabel>
+                    <FormLabel>Data de Início</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
                     </FormControl>
@@ -147,21 +152,13 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
               />
               <FormField
                 control={form.control}
-                name="dateFormat"
+                name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Formato da Data</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione um formato" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="dd/MM/yyyy">dd/MM/yyyy</SelectItem>
-                        <SelectItem value="MMM/yy">MMM/yy</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Data Final</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -169,16 +166,37 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
             </div>
             <FormField
               control={form.control}
-              name="color"
+              name="dateFormat"
               render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Cor</FormLabel>
+                <FormItem>
+                  <FormLabel>Formato da Data</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um formato" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="dd/MM/yyyy">dd/MM/yyyy</SelectItem>
+                      <SelectItem value="MMM/yy">MMM/yy</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Cor</FormLabel>
                     <FormControl>
                       <ColorPicker value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-              )}
+                    </FormItem>
+                )}
             />
             <FormField
               control={form.control}
@@ -190,14 +208,32 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
                     <Slider
                       value={[field.value]}
                       onValueChange={(value) => field.onChange(value[0])}
-                      min={MILESTONE_HEIGHT.min}
-                      max={MILESTONE_HEIGHT.max}
+                      min={TASK_HEIGHT.min}
+                      max={TASK_HEIGHT.max}
                       step={1}
                     />
                   </FormControl>
                 </FormItem>
               )}
             />
+             <FormField
+                control={form.control}
+                name="showTextInside"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Mostrar nome dentro da barra</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
             <DialogFooter className="sm:justify-between pt-4 border-t">
               <div className="flex items-center gap-2">
                 {defaultValues && onDelete && (

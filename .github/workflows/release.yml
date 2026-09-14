@@ -1,0 +1,98 @@
+name: Release
+
+# Cria a tag vX.Y.Z e a Release no GitHub a partir de uma versão informada manualmente.
+# Uso: Actions > Release > Run workflow > informar a versão (ex: 1.1.0).
+# A versão deve ser igual à do package.json no commit alvo, e o CHANGELOG.md
+# deve conter uma seção "## [X.Y.Z]" cujo conteúdo vira as notas da release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão semântica sem o prefixo v (ex: 1.1.0)"
+        required: true
+        type: string
+      target:
+        description: "Commit SHA ou branch que receberá a tag (vazio = ref atual)"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validar versão
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Versão inválida: '$VERSION'. Use o formato X.Y.Z"
+            exit 1
+          fi
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::A tag v$VERSION já existe"
+            exit 1
+          fi
+
+      - name: Resolver commit alvo
+        id: target
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          if [ -z "$TARGET" ]; then TARGET="$GITHUB_SHA"; fi
+          SHA=$(git rev-parse --verify "$TARGET^{commit}" 2>/dev/null || git rev-parse --verify "origin/$TARGET^{commit}")
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Commit alvo: $SHA"
+
+      - name: Conferir versão do package.json no commit alvo
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          PKG_VERSION=$(git show "$SHA:package.json" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).version')
+          if [ "$PKG_VERSION" != "$VERSION" ]; then
+            echo "::error::package.json no commit alvo está em $PKG_VERSION, mas a versão informada é $VERSION"
+            exit 1
+          fi
+
+      - name: Extrair notas do CHANGELOG
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          awk -v v="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found=1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::warning::Seção [$VERSION] não encontrada no CHANGELOG.md; usando notas genéricas"
+            echo "Release v$VERSION" > notes.md
+          fi
+          echo "----- notas -----"; cat notes.md
+
+      - name: Criar tag anotada
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA: ${{ steps.target.outputs.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" "$SHA" -m "v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: Criar Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes-file notes.md \
+            --verify-tag
