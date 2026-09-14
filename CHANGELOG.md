@@ -14,10 +14,10 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 ### Adicionado
 
 - **Períodos de destaque**: faixas verticais semitransparentes entre duas
-  datas, desenhadas atrás das tarefas e dos marcos, para marcar intervalos
+  datas, desenhadas sobre as tarefas e os marcos, para marcar intervalos
   como período chuvoso ou férias coletivas. Cada período tem nome (opcional),
   datas, cor e transparência ajustável. Botão *Novo Período* na barra de
-  controles; duplo clique na faixa para editar ou excluir.
+  controles; duplo clique no rótulo na base da faixa para editar ou excluir.
 - Formato do arquivo `.engsched` sobe para 1.3 com a chave `periods`.
   Arquivos das versões anteriores continuam abrindo normalmente.
 

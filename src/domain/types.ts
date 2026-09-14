@@ -37,7 +37,7 @@ export interface MilestoneData {
 }
 
 /**
- * A highlighted date range drawn as a translucent vertical band behind the
+ * A highlighted date range drawn as a translucent vertical band over the
  * tasks and milestones (e.g. rainy season, collective holidays).
  */
 export interface PeriodData {
