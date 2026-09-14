@@ -9,6 +9,19 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.0.2] - 2026-09-14
+
+### Removido
+
+- 18 componentes shadcn/ui que nenhuma parte do app importava (accordion,
+  alert, avatar, badge, calendar, carousel, chart, checkbox, collapsible,
+  menubar, progress, radio-group, scroll-area, separator, sheet, sidebar,
+  table, tabs), o hook `use-mobile` que só o sidebar usava, e as 13
+  dependências npm que existiam apenas para esses arquivos (entre elas
+  `recharts`, `react-day-picker` e `embla-carousel-react`).
+- Tokens de tema `chart-*` e `sidebar-*` do CSS e do Tailwind, que só os
+  componentes removidos consumiam.
+
 ## [2.0.1] - 2026-09-13
 
 ### Corrigido

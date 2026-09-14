@@ -6,7 +6,6 @@ Aplicativo para criação e visualização de cronogramas de engenharia em forma
 
 - **Next.js 14** + **React 18** + **TypeScript**
 - **Tailwind CSS** + **shadcn/ui**
-- **Recharts** (gráficos)
 - **dnd-kit** (drag and drop)
 - **date-fns** (manipulação de datas)
 - **html-to-image** (exportação como PNG)
