@@ -12,7 +12,7 @@ Avaliamos aplicar DDD e Arquitetura Limpa ao projeto. A conclusão foi:
 ```
 src/
 ├── domain/            # TypeScript puro. Sem React, sem window. Testável em ms.
-│   ├── types.ts             Entidades: ProjectSettings, TaskData, MilestoneData, ProjectFile
+│   ├── types.ts             Entidades: ProjectSettings, TaskData, MilestoneData, PeriodData, ProjectFile
 │   ├── layout.ts            Geometria da linha do tempo (datas -> %), empilhamento das linhas
 │   ├── bulk.ts              Seleção por intervalo, mover bloco, deslocar datas, patch em lote
 │   ├── colors.ts            Paleta estilo Excel, normalização de hex, contraste

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useReducer } from "react";
-import type { MilestoneData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
+import type { MilestoneData, PeriodData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
 import { type BulkPatch, type Selection, selectionSize, shiftMilestoneDates, shiftTaskDates } from "@/domain/bulk";
 import { createProjectFile } from "@/domain/project-file";
 import { INITIAL_PROJECT_STATE, type ItemKind, type LabelKind, projectReducer } from "./project-reducer";
@@ -38,6 +38,8 @@ export function useProject() {
   const deleteTask = useCallback((id: string) => dispatch({ type: "task/deleted", id }), []);
   const saveMilestone = useCallback((milestone: MilestoneData) => dispatch({ type: "milestone/saved", milestone }), []);
   const deleteMilestone = useCallback((id: string) => dispatch({ type: "milestone/deleted", id }), []);
+  const savePeriod = useCallback((period: PeriodData) => dispatch({ type: "period/saved", period }), []);
+  const deletePeriod = useCallback((id: string) => dispatch({ type: "period/deleted", id }), []);
 
   const dragLabel = useCallback((item: ItemKind, label: LabelKind, id: string, delta: { x: number; y: number }) => {
     dispatch({ type: "label/dragged", item, label, id, delta });
@@ -62,7 +64,7 @@ export function useProject() {
     return { moved: selectionSize(ids) - skipped, skipped };
   }, [state]);
 
-  const toProjectFile = useCallback(() => createProjectFile(state.settings, state.tasks, state.milestones), [state]);
+  const toProjectFile = useCallback(() => createProjectFile(state.settings, state.tasks, state.milestones, state.periods), [state]);
 
   const isEmpty = state === INITIAL_PROJECT_STATE;
 
@@ -70,6 +72,7 @@ export function useProject() {
     settings: state.settings,
     tasks: state.tasks,
     milestones: state.milestones,
+    periods: state.periods,
     isEmpty,
     configureProject,
     loadProject,
@@ -78,6 +81,8 @@ export function useProject() {
     deleteTask,
     saveMilestone,
     deleteMilestone,
+    savePeriod,
+    deletePeriod,
     dragLabel,
     moveTasks,
     patchItems,
@@ -87,7 +92,7 @@ export function useProject() {
     toProjectFile,
   }), [
     state, isEmpty, configureProject, loadProject, resetProject, saveTask, deleteTask,
-    saveMilestone, deleteMilestone, dragLabel, moveTasks, patchItems, resetLabels, deleteItems,
+    saveMilestone, deleteMilestone, savePeriod, deletePeriod, dragLabel, moveTasks, patchItems, resetLabels, deleteItems,
     shiftDates, toProjectFile,
   ]);
 }

@@ -1,4 +1,4 @@
-import type { MilestoneData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
+import type { MilestoneData, PeriodData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
 import {
   type BulkPatch,
   type Selection,
@@ -18,12 +18,14 @@ export interface ProjectState {
   settings: ProjectSettings | null;
   tasks: TaskData[];
   milestones: MilestoneData[];
+  periods: PeriodData[];
 }
 
 export const INITIAL_PROJECT_STATE: ProjectState = {
   settings: null,
   tasks: [],
   milestones: [],
+  periods: [],
 };
 
 export type LabelKind = "name" | "date";
@@ -37,6 +39,8 @@ export type ProjectAction =
   | { type: "task/deleted"; id: string }
   | { type: "milestone/saved"; milestone: MilestoneData }
   | { type: "milestone/deleted"; id: string }
+  | { type: "period/saved"; period: PeriodData }
+  | { type: "period/deleted"; id: string }
   | { type: "label/dragged"; item: ItemKind; label: LabelKind; id: string; delta: { x: number; y: number } }
   | { type: "items/patched"; ids: Selection; patch: BulkPatch }
   | { type: "items/labelsReset"; ids: Selection }
@@ -66,6 +70,7 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
         settings: action.file.projectSettings,
         tasks: action.file.tasks,
         milestones: action.file.milestones,
+        periods: action.file.periods ?? [],
       };
 
     case "project/reset":
@@ -92,6 +97,17 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
 
     case "milestone/deleted":
       return { ...state, milestones: state.milestones.filter(m => m.id !== action.id) };
+
+    case "period/saved": {
+      const exists = state.periods.some(p => p.id === action.period.id);
+      const periods = exists
+        ? state.periods.map(p => (p.id === action.period.id ? action.period : p))
+        : [...state.periods, action.period];
+      return { ...state, periods };
+    }
+
+    case "period/deleted":
+      return { ...state, periods: state.periods.filter(p => p.id !== action.id) };
 
     case "label/dragged":
       if (action.item === "task") {

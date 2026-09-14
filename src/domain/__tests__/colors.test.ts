@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { STANDARD_COLORS, THEME_COLORS, contrastTextColor, isValidHex, normalizeHex } from "@/domain/colors";
+import { hexToRgba } from "@/domain/colors";
 
 describe("normalizeHex", () => {
   it("accepts 3 and 6 digit forms with or without #", () => {
@@ -36,5 +37,17 @@ describe("palette", () => {
       col.shades.forEach(s => expect(isValidHex(s)).toBe(true));
     }
     STANDARD_COLORS.forEach(c => expect(isValidHex(c.hex)).toBe(true));
+  });
+});
+
+describe("hexToRgba", () => {
+  it("converts hex plus an opacity percentage", () => {
+    expect(hexToRgba("#5B9BD5", 25)).toBe("rgba(91, 155, 213, 0.25)");
+    expect(hexToRgba("fff", 100)).toBe("rgba(255, 255, 255, 1)");
+  });
+
+  it("clamps the opacity and falls back to black for invalid colors", () => {
+    expect(hexToRgba("#000000", 150)).toBe("rgba(0, 0, 0, 1)");
+    expect(hexToRgba("nope", -5)).toBe("rgba(0, 0, 0, 0)");
   });
 });

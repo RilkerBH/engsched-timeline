@@ -1,4 +1,4 @@
-import type { ProjectFile, ProjectSettings, TaskData, MilestoneData } from "./types";
+import type { ProjectFile, ProjectSettings, TaskData, MilestoneData, PeriodData } from "./types";
 import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-layout";
 
 /**
@@ -6,8 +6,9 @@ import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-l
  * 1.0 - original format (up to app v1.3.0)
  * 1.1 - label offsets become adjustments over the default position (app v1.4.0)
  * 1.2 - "servicePackages" renamed to "tasks" (app v2.0.0)
+ * 1.3 - "periods" (highlight bands) added; absent in older files (app v2.1.0)
  */
-export const PROJECT_FILE_VERSION = "1.2";
+export const PROJECT_FILE_VERSION = "1.3";
 const LEGACY_TASKS_KEY = "servicePackages";
 export const PROJECT_FILE_EXTENSION = ".engsched";
 
@@ -17,7 +18,8 @@ export const PROJECT_FILE_EXTENSION = ".engsched";
 export function createProjectFile(
   projectSettings: ProjectSettings | null,
   tasks: TaskData[],
-  milestones: MilestoneData[]
+  milestones: MilestoneData[],
+  periods: PeriodData[] = []
 ): ProjectFile {
   return {
     version: PROJECT_FILE_VERSION,
@@ -25,6 +27,7 @@ export function createProjectFile(
     projectSettings,
     tasks,
     milestones,
+    periods,
   };
 }
 
@@ -60,12 +63,18 @@ export function deserializeProject(json: string): ProjectFile {
     throw new Error("Arquivo de projeto inválido: marcos ausentes.");
   }
 
+  // Formats up to 1.2 have no periods
+  if (data.periods !== undefined && !Array.isArray(data.periods)) {
+    throw new Error("Arquivo de projeto inválido: períodos corrompidos.");
+  }
+
   return migrateProjectFile({
     version: data.version,
     exportedAt: data.exportedAt || new Date().toISOString(),
     projectSettings: data.projectSettings ?? null,
     tasks,
     milestones: data.milestones,
+    periods: data.periods ?? [],
     // The "zoom" field of legacy files is ignored (removed in v1.5.0)
   });
 }
@@ -83,7 +92,8 @@ export function migrateProjectFile(file: ProjectFile): ProjectFile {
     milestones = milestones.map(migrateMilestoneLabelOffsets);
   }
   // 1.1 -> 1.2 only renamed the key, which deserializeProject already normalizes
-  return { ...file, version: PROJECT_FILE_VERSION, tasks, milestones };
+  // 1.2 -> 1.3 only added "periods", defaulted to [] by deserializeProject
+  return { ...file, version: PROJECT_FILE_VERSION, tasks, milestones, periods: file.periods ?? [] };
 }
 
 /**

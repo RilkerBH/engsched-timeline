@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MilestoneData, TaskData } from "@/domain/types";
+import type { MilestoneData, PeriodData, TaskData } from "@/domain/types";
 import { INITIAL_PROJECT_STATE, type ProjectState, projectReducer } from "@/application/project-reducer";
 
 const settings = { id: "p", title: "Obra", startDate: "2026-01-01", endDate: "2026-12-31" };
@@ -11,15 +11,23 @@ const ms = (id: string, extra: Partial<MilestoneData> = {}): MilestoneData => ({
   id, name: id, date: "2026-06-01", color: "#000000", height: 30,
   labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0, ...extra,
 });
-const base: ProjectState = { settings, tasks: [task("a", 0), task("b", 1)], milestones: [ms("m")] };
+const period = (id: string, extra: Partial<PeriodData> = {}): PeriodData => ({
+  id, name: id, startDate: "2026-02-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25, ...extra,
+});
+const base: ProjectState = { settings, tasks: [task("a", 0), task("b", 1)], milestones: [ms("m")], periods: [period("r")] };
 
 describe("project lifecycle", () => {
   it("configures, loads and resets", () => {
     const configured = projectReducer(INITIAL_PROJECT_STATE, { type: "project/configured", settings: { title: "X", startDate: "2026-01-01", endDate: "2026-02-01" }, id: "id1" });
     expect(configured.settings).toEqual({ id: "id1", title: "X", startDate: "2026-01-01", endDate: "2026-02-01" });
 
-    const loaded = projectReducer(configured, { type: "project/loaded", file: { version: "1.1", exportedAt: "", projectSettings: settings, tasks: [task("z")], milestones: [] } });
+    const loaded = projectReducer(configured, { type: "project/loaded", file: { version: "1.1", exportedAt: "", projectSettings: settings, tasks: [task("z")], milestones: [], periods: [period("q")] } });
     expect(loaded.tasks.map(p => p.id)).toEqual(["z"]);
+    expect(loaded.periods.map(p => p.id)).toEqual(["q"]);
+
+    // Files written before format 1.3 carry no periods
+    const legacy = { version: "1.2", exportedAt: "", projectSettings: settings, tasks: [], milestones: [] } as unknown as Parameters<typeof projectReducer>[1] extends { type: "project/loaded"; file: infer F } ? F : never;
+    expect(projectReducer(configured, { type: "project/loaded", file: legacy }).periods).toEqual([]);
 
     expect(projectReducer(loaded, { type: "project/reset" })).toBe(INITIAL_PROJECT_STATE);
   });
@@ -102,5 +110,30 @@ describe("bulk actions", () => {
     const s = projectReducer(base, { type: "items/deleted", ids });
     expect(s.tasks.map(p => p.id)).toEqual(["b"]);
     expect(s.milestones).toEqual([]);
+  });
+});
+
+describe("periods", () => {
+  it("adds a new period and replaces an existing one by id", () => {
+    const added = projectReducer(base, { type: "period/saved", period: period("s") });
+    expect(added.periods.map(p => p.id)).toEqual(["r", "s"]);
+
+    const updated = projectReducer(added, { type: "period/saved", period: period("r", { name: "Chuvas", opacity: 40 }) });
+    expect(updated.periods).toHaveLength(2);
+    expect(updated.periods.find(p => p.id === "r")).toMatchObject({ name: "Chuvas", opacity: 40 });
+  });
+
+  it("deletes by id and leaves tasks and milestones untouched", () => {
+    const s = projectReducer(base, { type: "period/deleted", id: "r" });
+    expect(s.periods).toEqual([]);
+    expect(s.tasks).toBe(base.tasks);
+    expect(s.milestones).toBe(base.milestones);
+  });
+
+  it("is not affected by bulk actions on tasks and milestones", () => {
+    const ids = { tasks: ["a"], milestones: ["m"] };
+    expect(projectReducer(base, { type: "items/deleted", ids }).periods).toBe(base.periods);
+    expect(projectReducer(base, { type: "items/datesShifted", ids, days: 7 }).periods).toBe(base.periods);
+    expect(projectReducer(base, { type: "items/patched", ids, patch: { color: "#000000" } }).periods).toBe(base.periods);
   });
 });

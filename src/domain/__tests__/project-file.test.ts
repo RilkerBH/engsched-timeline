@@ -25,7 +25,7 @@ describe("serialize / deserialize", () => {
   it("reads tasks from the legacy servicePackages key (formats 1.0 and 1.1)", () => {
     const task = { id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01", color: "#000", height: 32, showTextInside: false, labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 };
     const back = deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: [task], milestones: [] }));
-    expect(back.version).toBe("1.2");
+    expect(back.version).toBe("1.3");
     expect(back.tasks).toEqual([task]);
     expect(back).not.toHaveProperty("servicePackages");
   });
@@ -39,7 +39,7 @@ describe("migrateProjectFile", () => {
       milestones: [{ id: "m", name: "m", date: "2026-01-10", color: "#000", height: 30, labelOffsetX: 0, labelOffsetY: -10, dateLabelOffsetX: 0, dateLabelOffsetY: 15 }],
     }));
     const migrated = migrateProjectFile(legacy);
-    expect(migrated.version).toBe("1.2");
+    expect(migrated.version).toBe("1.3");
     expect(migrated.tasks[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
     expect(migrated.milestones[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
   });
@@ -54,5 +54,25 @@ describe("getProjectFileName", () => {
   it("replaces whitespace and falls back to 'projeto'", () => {
     expect(getProjectFileName("Obra  Alfa 2")).toBe("Obra_Alfa_2.engsched");
     expect(getProjectFileName(undefined)).toBe("projeto.engsched");
+  });
+});
+
+describe("periods (format 1.3)", () => {
+  const period = { id: "r", name: "Chuvas", startDate: "2026-01-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25 };
+
+  it("round-trips periods", () => {
+    const file = createProjectFile(settings, [], [], [period]);
+    expect(file.version).toBe("1.3");
+    expect(deserializeProject(serializeProject(file)).periods).toEqual([period]);
+  });
+
+  it("defaults periods to [] when reading 1.2 files and stamps 1.3", () => {
+    const back = deserializeProject(JSON.stringify({ version: "1.2", projectSettings: null, tasks: [], milestones: [] }));
+    expect(back.version).toBe("1.3");
+    expect(back.periods).toEqual([]);
+  });
+
+  it("rejects a corrupt periods field", () => {
+    expect(() => deserializeProject(JSON.stringify({ version: "1.3", projectSettings: null, tasks: [], milestones: [], periods: "x" }))).toThrow(/períodos/);
   });
 });
