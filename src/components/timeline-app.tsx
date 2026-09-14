@@ -47,6 +47,7 @@ export default function TimelineApp() {
   const [isPeriodFormOpen, setIsPeriodFormOpen] = useState(false)
 
   const exportableAreaRef = useRef<HTMLDivElement>(null)
+  const rowsRef = useRef<HTMLDivElement>(null)
 
   const requestBulkDelete = useCallback(() => setIsBulkDeleteAlertOpen(true), [])
   const sel = useSelection(tasks, milestones, requestBulkDelete)
@@ -159,6 +160,30 @@ export default function TimelineApp() {
     toast({ title: "Período Excluído", variant: "destructive" })
   }
 
+  const periodBands = useMemo(
+    () => settings ? periods.map(p => ({ ...p, ...getPositionAndWidth(p.startDate, p.endDate, settings.startDate, settings.endDate) })) : [],
+    [periods, settings]
+  )
+
+  /**
+   * Double-click on empty space of the timeline: opens the period under the
+   * cursor, if any. Tasks, milestones and the period handle stop here via
+   * data-keep-selection, so they keep their own double-click behaviour.
+   */
+  const handleTimelineDoubleClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("[data-keep-selection]")) return
+    const rows = rowsRef.current
+    if (!rows || periodBands.length === 0) return
+    const rect = rows.getBoundingClientRect()
+    if (e.clientY < rect.top - MILESTONE_STRIP_HEIGHT || e.clientY > rect.bottom) return
+    const xPct = ((e.clientX - rect.left) / rect.width) * 100
+    // Last match wins: it is the one drawn on top
+    const hit = [...periodBands].reverse().find(p => xPct >= p.left && xPct <= p.left + p.width)
+    if (!hit) return
+    setEditingPeriod(hit)
+    setIsPeriodFormOpen(true)
+  }
+
   // ----- Bulk actions -----
 
   const handleBackgroundClick = (e: React.MouseEvent) => {
@@ -210,10 +235,6 @@ export default function TimelineApp() {
     [tasks, settings]
   )
 
-  const periodBands = useMemo(
-    () => settings ? periods.map(p => ({ ...p, ...getPositionAndWidth(p.startDate, p.endDate, settings.startDate, settings.endDate) })) : [],
-    [periods, settings]
-  )
 
   if (!isClient) {
     return (
@@ -239,6 +260,7 @@ export default function TimelineApp() {
               <header className="mb-4">
                 <h1 className="font-headline text-3xl font-bold">{settings.title}</h1>
               </header>
+              <div onDoubleClick={handleTimelineDoubleClick}>
               <TimelineHeader
                 projectSettings={settings}
                 milestones={milestones}
@@ -249,7 +271,7 @@ export default function TimelineApp() {
                 selectedMilestoneIds={selection.milestones}
                 onSelectMilestone={sel.selectMilestone}
               />
-              <div className="relative" style={{ height: `${rowsHeight}px` }}>
+              <div ref={rowsRef} className="relative" style={{ height: `${rowsHeight}px` }}>
                 {periodBands.map(period => (
                   <PeriodBand
                     key={period.id}
@@ -274,6 +296,7 @@ export default function TimelineApp() {
                     onSelect={(e) => sel.selectTask(task.id, e)}
                   />
                 ))}
+              </div>
               </div>
             </div>
           </DndContext>

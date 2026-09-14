@@ -18,7 +18,8 @@ type PeriodBandProps = {
  * Translucent vertical band drawn IN FRONT of the tasks and milestones. It
  * sits inside the rows container and grows upwards to also cover the
  * milestone strip. The band itself ignores the pointer so the items under
- * it stay clickable; only the handle at its base reacts (tooltip, edit).
+ * it stay clickable. Double-clicking empty space inside the band is resolved
+ * by TimelineApp (by position); the handle at its base adds a tooltip.
  */
 export function PeriodBand({ period, extendUp, onDoubleClick }: PeriodBandProps) {
   const dateRange = `${format(parseISO(period.startDate), "dd/MM/yyyy", { locale: ptBR })} - ${format(parseISO(period.endDate), "dd/MM/yyyy", { locale: ptBR })}`
@@ -52,7 +53,7 @@ export function PeriodBand({ period, extendUp, onDoubleClick }: PeriodBandProps)
           <TooltipContent side="bottom">
             {period.name && <p className="font-bold">{period.name}</p>}
             <p>{dateRange}</p>
-            <p className="text-muted-foreground">Duplo clique para editar</p>
+            <p className="text-muted-foreground">Duplo clique na faixa para editar</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
