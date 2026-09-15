@@ -4,7 +4,8 @@ import { INITIAL_PROJECT_STATE, type ProjectState, projectReducer } from "./proj
 /**
  * Autosave of the project state in the browser's localStorage.
  *
- * Storage schema 3 keeps the whole state under one key with a "tasks" field.
+ * Storage schema 3 keeps the whole state under one key with a "tasks" field
+ * ("periods" was added in app v2.1.0 and defaults to [] when absent).
  * Schema 2 (app v1.6.1 to v1.7.0) used the same key with a "packages" field.
  * Schema 1 (up to app v1.6.0) used three separate keys plus a label-schema
  * marker. Older schemas are read once and converted on first load.
@@ -55,6 +56,7 @@ function loadLegacyState(store: KeyValueStore): ProjectState | null {
     settings: settings ?? null,
     tasks: Array.isArray(tasks) ? tasks : [],
     milestones: Array.isArray(milestones) ? milestones : [],
+    periods: [],
   };
   const labelSchema = Number(store.getItem(LEGACY_KEYS.labelSchema) || "1");
   return labelSchema >= LABEL_SCHEMA_VERSION ? state : projectReducer(state, { type: "labels/migrated" });

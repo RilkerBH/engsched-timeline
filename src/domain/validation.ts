@@ -7,6 +7,7 @@ import { isValidHex } from "./colors";
 
 export const TASK_HEIGHT = { min: 16, max: 80 } as const;
 export const MILESTONE_HEIGHT = { min: 20, max: 60 } as const;
+export const PERIOD_OPACITY = { min: 5, max: 80 } as const;
 export const DATE_FORMATS = ["dd/MM/yyyy", "MMM/yy"] as const;
 
 export const MESSAGES = {
@@ -83,3 +84,25 @@ export function milestoneSchema(project: DateRange) {
 }
 
 export type MilestoneInput = z.infer<ReturnType<typeof milestoneSchema>>;
+
+export function periodSchema(project: DateRange) {
+  return z.object({
+    name: z.string(),
+    startDate: z.string().min(1, MESSAGES.startRequired),
+    endDate: z.string().min(1, MESSAGES.endRequired),
+    color: z.string().refine(isValidHex, MESSAGES.invalidColor),
+    opacity: z.number().min(PERIOD_OPACITY.min).max(PERIOD_OPACITY.max),
+  }).superRefine((data, ctx) => {
+    if (data.startDate > data.endDate) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endOnOrAfterStart, path: ["endDate"] });
+    }
+    if (!isWithinRange(data.startDate, project)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.startWithinProject, path: ["startDate"] });
+    }
+    if (!isWithinRange(data.endDate, project)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endWithinProject, path: ["endDate"] });
+    }
+  });
+}
+
+export type PeriodInput = z.infer<ReturnType<typeof periodSchema>>;

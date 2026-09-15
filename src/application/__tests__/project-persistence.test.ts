@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { INITIAL_PROJECT_STATE } from "@/application/project-reducer";
-import { PROJECT_STORAGE_KEY, type KeyValueStore, loadPersistedState, persistState } from "@/application/project-persistence";
+import { PROJECT_STORAGE_KEY, PROJECT_STORAGE_SCHEMA, type KeyValueStore, loadPersistedState, persistState } from "@/application/project-persistence";
 
 function memoryStore(initial: Record<string, string> = {}): KeyValueStore & { data: Record<string, string> } {
   const data = { ...initial };
@@ -17,7 +17,7 @@ describe("loadPersistedState", () => {
 
   it("round-trips through persistState", () => {
     const store = memoryStore();
-    const state = { settings, tasks: [], milestones: [] };
+    const state = { settings, tasks: [], milestones: [] , periods: [] };
     persistState(store, state);
     expect(loadPersistedState(store)).toEqual(state);
   });
@@ -51,5 +51,20 @@ describe("loadPersistedState", () => {
   it("ignores corrupt data", () => {
     const store = memoryStore({ [PROJECT_STORAGE_KEY]: "{not json" });
     expect(loadPersistedState(store)).toBe(INITIAL_PROJECT_STATE);
+  });
+});
+
+describe("periods (added in app v2.1.0)", () => {
+  it("defaults periods to [] for schema-3 payloads saved before periods existed", () => {
+    const store = memoryStore();
+    store.setItem(PROJECT_STORAGE_KEY, JSON.stringify({ schema: PROJECT_STORAGE_SCHEMA, state: { settings: null, tasks: [], milestones: [] } }));
+    expect(loadPersistedState(store).periods).toEqual([]);
+  });
+
+  it("round-trips periods", () => {
+    const store = memoryStore();
+    const state = { ...INITIAL_PROJECT_STATE, periods: [{ id: "r", name: "Chuvas", startDate: "2026-01-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25 }] };
+    persistState(store, state);
+    expect(loadPersistedState(store).periods).toEqual(state.periods);
   });
 });

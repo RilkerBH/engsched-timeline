@@ -66,6 +66,7 @@ public/              # Assets estáticos
 - Configuração de período do projeto (data início/fim)
 - Tarefas com cores, datas e posicionamento customizável
 - Marcos (milestones) na timeline
+- Períodos de destaque (faixas verticais semitransparentes entre duas datas, com cor e transparência ajustáveis)
 - Seletor de cores estilo Excel (cores do tema, cores padrão e código hexadecimal)
 - Seleção múltipla de tarefas e marcos (clique, Ctrl+clique, Shift+clique) com edição em bloco: cor, formato de data, mover como bloco, deslocar datas, excluir
 - Rótulos de nome e data em posição padrão alinhada, com ajuste fino por arrastar e opção de redefinir

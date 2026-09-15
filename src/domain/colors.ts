@@ -39,6 +39,10 @@ export const STANDARD_COLORS: { name: string; hex: string }[] = [
 /** Default color for new tasks and milestones. */
 export const DEFAULT_COLOR = "#4472C4";
 
+/** Default color and opacity (%) for new highlight periods. */
+export const DEFAULT_PERIOD_COLOR = "#5B9BD5";
+export const DEFAULT_PERIOD_OPACITY = 25;
+
 const HEX_RE = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 /**
@@ -66,4 +70,17 @@ export function contrastTextColor(hex: string): string {
   const b = parseInt(n.slice(5, 7), 16);
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.6 ? "#000000" : "#FFFFFF";
+}
+
+/**
+ * Converts "#RRGGBB" plus an opacity percentage (0-100) to an "rgba(...)" string.
+ * Invalid colors fall back to black; the opacity is clamped to 0-100.
+ */
+export function hexToRgba(hex: string, opacityPercent: number): string {
+  const n = normalizeHex(hex) ?? "#000000";
+  const r = parseInt(n.slice(1, 3), 16);
+  const g = parseInt(n.slice(3, 5), 16);
+  const b = parseInt(n.slice(5, 7), 16);
+  const alpha = Math.min(100, Math.max(0, opacityPercent)) / 100;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

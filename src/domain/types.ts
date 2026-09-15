@@ -36,10 +36,24 @@ export interface MilestoneData {
   dateFormat?: 'dd/MM/yyyy' | 'MMM/yy';
 }
 
+/**
+ * A highlighted date range drawn as a translucent vertical band over the
+ * tasks and milestones (e.g. rainy season, collective holidays).
+ */
+export interface PeriodData {
+  id: string;
+  name: string;         // may be empty
+  startDate: string;    // YYYY-MM-DD (UTC), inclusive
+  endDate: string;      // YYYY-MM-DD (UTC), inclusive
+  color: string;        // #RRGGBB
+  opacity: number;      // 5‒80 (%)
+}
+
 export interface ProjectFile {
   version: string;
   exportedAt: string;
   projectSettings: ProjectSettings | null;
   tasks: TaskData[];
   milestones: MilestoneData[];
+  periods: PeriodData[];
 }

@@ -5,9 +5,9 @@ import { DndContext, type DragEndEvent } from "@dnd-kit/core"
 import { toPng } from "html-to-image"
 import { format } from "date-fns"
 
-import type { ProjectSettings, TaskData, MilestoneData } from "@/domain/types"
+import type { ProjectSettings, TaskData, MilestoneData, PeriodData } from "@/domain/types"
 import { selectionSize } from "@/domain/bulk"
-import { layoutTaskRows } from "@/domain/layout"
+import { getPositionAndWidth, layoutTaskRows } from "@/domain/layout"
 import { useProject } from "@/application/use-project"
 import { getProjectStorage } from "@/infrastructure/project-storage"
 import { useSelection } from "@/hooks/use-selection"
@@ -19,17 +19,21 @@ import { TimelineHeader } from "./timeline-header"
 import { TaskRow } from "./task-row"
 import { TaskForm } from "./task-form"
 import { MilestoneForm } from "./milestone-form"
+import { PeriodForm } from "./period-form"
+import { PeriodBand } from "./period-band"
 import { SelectionToolbar } from "./selection-toolbar"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 import { Skeleton } from "./ui/skeleton"
 
 const ROW_GAP = 20
+/** Height of the milestone strip in TimelineHeader (Tailwind h-20). Bands extend up through it. */
+const MILESTONE_STRIP_HEIGHT = 80
 const projectStorage = getProjectStorage()
 
 export default function TimelineApp() {
   const [isClient, setIsClient] = useState(false)
   const project = useProject()
-  const { settings, tasks, milestones } = project
+  const { settings, tasks, milestones, periods } = project
   const { toast } = useToast()
 
   const [isResetAlertOpen, setIsResetAlertOpen] = useState(false)
@@ -39,8 +43,11 @@ export default function TimelineApp() {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false)
   const [editingMilestone, setEditingMilestone] = useState<MilestoneData | undefined>(undefined)
   const [isMilestoneFormOpen, setIsMilestoneFormOpen] = useState(false)
+  const [editingPeriod, setEditingPeriod] = useState<PeriodData | undefined>(undefined)
+  const [isPeriodFormOpen, setIsPeriodFormOpen] = useState(false)
 
   const exportableAreaRef = useRef<HTMLDivElement>(null)
+  const rowsRef = useRef<HTMLDivElement>(null)
 
   const requestBulkDelete = useCallback(() => setIsBulkDeleteAlertOpen(true), [])
   const sel = useSelection(tasks, milestones, requestBulkDelete)
@@ -142,6 +149,41 @@ export default function TimelineApp() {
     toast({ title: "Marco Deletado", variant: "destructive" })
   }
 
+  const handlePeriodSubmit = (data: PeriodData) => {
+    const exists = periods.some(p => p.id === data.id)
+    project.savePeriod(data)
+    toast({ title: exists ? "Período Atualizado" : "Período Criado" })
+  }
+
+  const handleDeletePeriod = (id: string) => {
+    project.deletePeriod(id)
+    toast({ title: "Período Excluído", variant: "destructive" })
+  }
+
+  const periodBands = useMemo(
+    () => settings ? periods.map(p => ({ ...p, ...getPositionAndWidth(p.startDate, p.endDate, settings.startDate, settings.endDate) })) : [],
+    [periods, settings]
+  )
+
+  /**
+   * Double-click on empty space of the timeline: opens the period under the
+   * cursor, if any. Tasks, milestones and the period handle stop here via
+   * data-keep-selection, so they keep their own double-click behaviour.
+   */
+  const handleTimelineDoubleClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("[data-keep-selection]")) return
+    const rows = rowsRef.current
+    if (!rows || periodBands.length === 0) return
+    const rect = rows.getBoundingClientRect()
+    if (e.clientY < rect.top - MILESTONE_STRIP_HEIGHT || e.clientY > rect.bottom) return
+    const xPct = ((e.clientX - rect.left) / rect.width) * 100
+    // Last match wins: it is the one drawn on top
+    const hit = [...periodBands].reverse().find(p => xPct >= p.left && xPct <= p.left + p.width)
+    if (!hit) return
+    setEditingPeriod(hit)
+    setIsPeriodFormOpen(true)
+  }
+
   // ----- Bulk actions -----
 
   const handleBackgroundClick = (e: React.MouseEvent) => {
@@ -193,6 +235,7 @@ export default function TimelineApp() {
     [tasks, settings]
   )
 
+
   if (!isClient) {
     return (
       <div className="p-4 md:p-8 space-y-4">
@@ -217,6 +260,7 @@ export default function TimelineApp() {
               <header className="mb-4">
                 <h1 className="font-headline text-3xl font-bold">{settings.title}</h1>
               </header>
+              <div onDoubleClick={handleTimelineDoubleClick}>
               <TimelineHeader
                 projectSettings={settings}
                 milestones={milestones}
@@ -227,7 +271,18 @@ export default function TimelineApp() {
                 selectedMilestoneIds={selection.milestones}
                 onSelectMilestone={sel.selectMilestone}
               />
-              <div className="relative" style={{ height: `${rowsHeight}px` }}>
+              <div ref={rowsRef} className="relative" style={{ height: `${rowsHeight}px` }}>
+                {periodBands.map(period => (
+                  <PeriodBand
+                    key={period.id}
+                    period={period}
+                    extendUp={MILESTONE_STRIP_HEIGHT}
+                    onDoubleClick={() => {
+                      setEditingPeriod(period)
+                      setIsPeriodFormOpen(true)
+                    }}
+                  />
+                ))}
                 {rows.map(task => (
                   <TaskRow
                     key={task.id}
@@ -241,6 +296,7 @@ export default function TimelineApp() {
                     onSelect={(e) => sel.selectTask(task.id, e)}
                   />
                 ))}
+              </div>
               </div>
             </div>
           </DndContext>
@@ -270,6 +326,7 @@ export default function TimelineApp() {
         onReset={() => setIsResetAlertOpen(true)}
         onAddTask={() => { setEditingTask(undefined); setIsTaskFormOpen(true) }}
         onAddMilestone={() => { setEditingMilestone(undefined); setIsMilestoneFormOpen(true) }}
+        onAddPeriod={() => { setEditingPeriod(undefined); setIsPeriodFormOpen(true) }}
         onEditProject={() => setIsSettingsDialogOpen(true)}
         onSaveProject={handleSaveProject}
         onLoadProject={handleLoadProject}
@@ -301,6 +358,17 @@ export default function TimelineApp() {
           onDelete={handleDeleteMilestone}
           projectSettings={settings}
           defaultValues={editingMilestone}
+        />
+      )}
+
+      {isPeriodFormOpen && (
+        <PeriodForm
+          isOpen={isPeriodFormOpen}
+          onClose={() => setIsPeriodFormOpen(false)}
+          onSubmit={handlePeriodSubmit}
+          onDelete={handleDeletePeriod}
+          projectSettings={settings}
+          defaultValues={editingPeriod}
         />
       )}
 

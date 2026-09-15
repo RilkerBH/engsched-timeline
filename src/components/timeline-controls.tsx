@@ -1,19 +1,20 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Download, PlusCircle, Milestone, Settings, Save, FolderOpen } from "lucide-react"
+import { RefreshCw, Download, PlusCircle, Milestone, Settings, Save, FolderOpen, RectangleVertical } from "lucide-react"
 
 type TimelineControlsProps = {
   onExport: () => void
   onReset: () => void
   onAddTask: () => void
   onAddMilestone: () => void
+  onAddPeriod: () => void
   onEditProject: () => void
   onSaveProject: () => void
   onLoadProject: () => void
 }
 
-export function TimelineControls({ onExport, onReset, onAddTask, onAddMilestone, onEditProject, onSaveProject, onLoadProject }: TimelineControlsProps) {
+export function TimelineControls({ onExport, onReset, onAddTask, onAddMilestone, onAddPeriod, onEditProject, onSaveProject, onLoadProject }: TimelineControlsProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 p-4 bg-card rounded-b-lg border-t-0 border">
       <div className="flex items-center gap-2">
@@ -24,6 +25,10 @@ export function TimelineControls({ onExport, onReset, onAddTask, onAddMilestone,
         <Button onClick={onAddMilestone} size="sm" variant="outline">
           <Milestone className="mr-2 h-4 w-4" />
           Novo Marco
+        </Button>
+        <Button onClick={onAddPeriod} size="sm" variant="outline">
+          <RectangleVertical className="mr-2 h-4 w-4" />
+          Novo Período
         </Button>
       </div>
       <div className="flex items-center gap-2">
