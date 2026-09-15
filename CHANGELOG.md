@@ -9,7 +9,7 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
-## [2.1.0] - 2026-09-14
+## [2.1.0] - 2026-09-15
 
 ### Adicionado
 
