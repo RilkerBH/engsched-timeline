@@ -78,20 +78,51 @@ export interface DateRange {
   endDate: string;
 }
 
-export interface TaskBar {
+/** Name + label offsets an interval (or a single-range task) carries independently. */
+export interface RangeLabels {
+  name: string;
+  labelOffsetX: number;
+  labelOffsetY: number;
+  dateLabelOffsetX: number;
+  dateLabelOffsetY: number;
+}
+
+/** One of the task's date ranges, with its own name/labels. `intervalId` is undefined
+ * for a single-range task (no real interval — its own top-level fields are used). */
+export interface TaskRange extends DateRange, RangeLabels {
+  intervalId?: string;
+}
+
+export interface TaskBar extends TaskRange {
   left: number;   // % of the TASK'S OWN bounding box (envelope), not the timeline
   width: number;  // %
 }
 
-type IntervalTask = { startDate: string; endDate: string; intervals?: DateRange[] };
+type PartialLabels = Partial<RangeLabels>;
+type IntervalTask = {
+  startDate: string;
+  endDate: string;
+  intervals?: (DateRange & PartialLabels & { id: string })[];
+} & PartialLabels;
+
+const rangeLabelDefaults = (labels: PartialLabels): RangeLabels => ({
+  name: labels.name ?? "",
+  labelOffsetX: labels.labelOffsetX ?? 0,
+  labelOffsetY: labels.labelOffsetY ?? 0,
+  dateLabelOffsetX: labels.dateLabelOffsetX ?? 0,
+  dateLabelOffsetY: labels.dateLabelOffsetY ?? 0,
+});
 
 /**
  * Returns the task's date ranges (its `intervals` when set, otherwise a
- * single range built from startDate/endDate), always sorted by startDate —
- * the persisted `intervals` array has no guaranteed order.
+ * single range built from its own startDate/endDate/name/label offsets),
+ * always sorted by startDate — the persisted `intervals` array has no
+ * guaranteed order. Each range keeps its own name and label offsets.
  */
-export function getTaskRanges<T extends IntervalTask>(task: T): DateRange[] {
-  const ranges = task.intervals && task.intervals.length > 1 ? task.intervals : [{ startDate: task.startDate, endDate: task.endDate }];
+export function getTaskRanges<T extends IntervalTask>(task: T): TaskRange[] {
+  const ranges: TaskRange[] = task.intervals && task.intervals.length > 1
+    ? task.intervals.map(iv => ({ intervalId: iv.id, startDate: iv.startDate, endDate: iv.endDate, ...rangeLabelDefaults(iv) }))
+    : [{ intervalId: undefined, startDate: task.startDate, endDate: task.endDate, ...rangeLabelDefaults(task) }];
   return [...ranges].sort((a, b) => a.startDate.localeCompare(b.startDate));
 }
 
@@ -104,8 +135,9 @@ export function getTaskRanges<T extends IntervalTask>(task: T): DateRange[] {
 export function getTaskBars<T extends IntervalTask>(task: T): TaskBar[] {
   const ranges = getTaskRanges(task);
   const envelopeDays = inclusiveDays(task.startDate, task.endDate);
-  if (envelopeDays <= 0) return ranges.map(() => ({ left: 0, width: 0 }));
+  if (envelopeDays <= 0) return ranges.map(r => ({ ...r, left: 0, width: 0 }));
   return ranges.map(r => ({
+    ...r,
     left: (differenceInDays(parseISO(r.startDate), parseISO(task.startDate)) / envelopeDays) * 100,
     width: (inclusiveDays(r.startDate, r.endDate) / envelopeDays) * 100,
   }));
@@ -115,7 +147,7 @@ export function getTaskBars<T extends IntervalTask>(task: T): TaskBar[] {
  * Stacks tasks vertically in `order`, each one `gap` px below the previous.
  * Returns the rows and the total container height (with a bottom padding of `gap`).
  */
-export function layoutTaskRows<T extends { order: number; height: number; startDate: string; endDate: string; intervals?: DateRange[] }>(
+export function layoutTaskRows<T extends IntervalTask & { order: number; height: number }>(
   tasks: T[],
   projectStartDate: string,
   projectEndDate: string,

@@ -41,8 +41,8 @@ export function useProject() {
   const savePeriod = useCallback((period: PeriodData) => dispatch({ type: "period/saved", period }), []);
   const deletePeriod = useCallback((id: string) => dispatch({ type: "period/deleted", id }), []);
 
-  const dragLabel = useCallback((item: ItemKind, label: LabelKind, id: string, delta: { x: number; y: number }) => {
-    dispatch({ type: "label/dragged", item, label, id, delta });
+  const dragLabel = useCallback((item: ItemKind, label: LabelKind, id: string, delta: { x: number; y: number }, intervalId?: string) => {
+    dispatch({ type: "label/dragged", item, label, id, delta, intervalId });
   }, []);
 
   const moveTasks = useCallback((ids: string[], direction: "up" | "down") => {

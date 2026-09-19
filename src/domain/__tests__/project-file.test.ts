@@ -25,7 +25,7 @@ describe("serialize / deserialize", () => {
   it("reads tasks from the legacy servicePackages key (formats 1.0 and 1.1)", () => {
     const task = { id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01", color: "#000", height: 32, showTextInside: false, labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 };
     const back = deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: [task], milestones: [] }));
-    expect(back.version).toBe("1.4");
+    expect(back.version).toBe("1.5");
     expect(back.tasks).toEqual([task]);
     expect(back).not.toHaveProperty("servicePackages");
   });
@@ -39,7 +39,7 @@ describe("migrateProjectFile", () => {
       milestones: [{ id: "m", name: "m", date: "2026-01-10", color: "#000", height: 30, labelOffsetX: 0, labelOffsetY: -10, dateLabelOffsetX: 0, dateLabelOffsetY: 15 }],
     }));
     const migrated = migrateProjectFile(legacy);
-    expect(migrated.version).toBe("1.4");
+    expect(migrated.version).toBe("1.5");
     expect(migrated.tasks[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
     expect(migrated.milestones[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
   });
@@ -62,13 +62,13 @@ describe("periods (format 1.3)", () => {
 
   it("round-trips periods", () => {
     const file = createProjectFile(settings, [], [], [period]);
-    expect(file.version).toBe("1.4");
+    expect(file.version).toBe("1.5");
     expect(deserializeProject(serializeProject(file)).periods).toEqual([period]);
   });
 
   it("defaults periods to [] when reading 1.2 files and stamps the current version", () => {
     const back = deserializeProject(JSON.stringify({ version: "1.2", projectSettings: null, tasks: [], milestones: [] }));
-    expect(back.version).toBe("1.4");
+    expect(back.version).toBe("1.5");
     expect(back.periods).toEqual([]);
   });
 
@@ -77,13 +77,13 @@ describe("periods (format 1.3)", () => {
   });
 });
 
-describe("intervals (format 1.4)", () => {
+describe("intervals (format 1.4/1.5)", () => {
   const taskWithIntervals = {
     id: "a", name: "a", order: 0,
     startDate: "2026-03-01", endDate: "2026-05-31",
     intervals: [
-      { id: "1", startDate: "2026-03-01", endDate: "2026-03-31" },
-      { id: "2", startDate: "2026-05-01", endDate: "2026-05-31" },
+      { id: "1", name: "Início", startDate: "2026-03-01", endDate: "2026-03-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+      { id: "2", name: "Retomada", startDate: "2026-05-01", endDate: "2026-05-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
     ],
     color: "#000", height: 32, showTextInside: false,
     labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0,
@@ -91,14 +91,33 @@ describe("intervals (format 1.4)", () => {
 
   it("round-trips a task with intervals", () => {
     const file = createProjectFile(settings, [taskWithIntervals], []);
-    expect(file.version).toBe("1.4");
+    expect(file.version).toBe("1.5");
     expect(deserializeProject(serializeProject(file)).tasks).toEqual([taskWithIntervals]);
   });
 
   it("opens a 1.3 file (no intervals) with tasks left unchanged", () => {
     const task = { id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01", color: "#000", height: 32, showTextInside: false, labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 };
     const back = deserializeProject(JSON.stringify({ version: "1.3", projectSettings: null, tasks: [task], milestones: [], periods: [] }));
-    expect(back.version).toBe("1.4");
+    expect(back.version).toBe("1.5");
     expect(back.tasks).toEqual([task]);
+  });
+
+  it("backfills name/offsets on 1.4 intervals that predate them, falling back to the task's own name", () => {
+    const legacyTask = {
+      id: "a", name: "Mobilização", order: 0,
+      startDate: "2026-03-01", endDate: "2026-05-31",
+      intervals: [
+        { id: "1", startDate: "2026-03-01", endDate: "2026-03-31" },
+        { id: "2", startDate: "2026-05-01", endDate: "2026-05-31" },
+      ],
+      color: "#000", height: 32, showTextInside: false,
+      labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0,
+    };
+    const back = deserializeProject(JSON.stringify({ version: "1.4", projectSettings: null, tasks: [legacyTask], milestones: [], periods: [] }));
+    expect(back.version).toBe("1.5");
+    expect(back.tasks[0].intervals).toEqual([
+      { id: "1", name: "Mobilização", startDate: "2026-03-01", endDate: "2026-03-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+      { id: "2", name: "Mobilização", startDate: "2026-05-01", endDate: "2026-05-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+    ]);
   });
 });

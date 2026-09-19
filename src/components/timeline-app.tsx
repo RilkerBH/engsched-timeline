@@ -121,10 +121,11 @@ export default function TimelineApp() {
   // ----- Items -----
 
   const handleLabelDragEnd = (event: DragEndEvent) => {
-    const [label, item, ...rest] = event.active.id.toString().split("-")
-    const id = rest.join("-")
-    if ((label !== "name" && label !== "date") || (item !== "task" && item !== "milestone") || !id) return
-    project.dragLabel(item, label, id, event.delta)
+    const data = event.active.data.current as { type?: string; id?: string; intervalId?: string } | undefined
+    if (!data?.type || !data.id) return
+    const [label, item] = data.type.split("-")
+    if ((label !== "name" && label !== "date") || (item !== "task" && item !== "milestone")) return
+    project.dragLabel(item, label, data.id, event.delta, data.intervalId)
   }
 
   const handleTaskSubmit = (data: TaskData) => {

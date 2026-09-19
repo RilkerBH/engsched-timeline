@@ -52,6 +52,7 @@ export function taskSchema(project: DateRange) {
     endDate: z.string(),
     extraIntervals: z.array(z.object({
       id: z.string(),
+      name: z.string().min(1, MESSAGES.nameRequired),
       startDate: z.string(),
       endDate: z.string(),
     })).optional(),

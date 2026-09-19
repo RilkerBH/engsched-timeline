@@ -76,6 +76,33 @@ describe("labels", () => {
     expect(s.tasks[1].labelOffsetX).toBe(9);
   });
 
+  const interval = (id: string, extra: Partial<{ name: string; labelOffsetX: number; labelOffsetY: number; dateLabelOffsetX: number; dateLabelOffsetY: number }> = {}) => ({
+    id, name: id, startDate: "2026-03-01", endDate: "2026-03-10",
+    labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0, ...extra,
+  });
+
+  it("drags the name/date offsets of a specific interval, leaving the task's own offsets and other intervals untouched", () => {
+    const withIntervals: ProjectState = {
+      ...base,
+      tasks: [task("a", 0, { labelOffsetX: 1, intervals: [interval("i1"), interval("i2")] }), task("b", 1)],
+    };
+    const s = projectReducer(withIntervals, { type: "label/dragged", item: "task", label: "name", id: "a", intervalId: "i2", delta: { x: 5, y: 2 } });
+    const a = s.tasks[0];
+    expect(a.labelOffsetX).toBe(1); // task-level offset untouched
+    expect(a.intervals?.find(iv => iv.id === "i1")).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0 });
+    expect(a.intervals?.find(iv => iv.id === "i2")).toMatchObject({ labelOffsetX: 5, labelOffsetY: 2 });
+  });
+
+  it("resets every interval's offsets too when resetting labels on a multi-interval task", () => {
+    const dirty: ProjectState = {
+      ...base,
+      tasks: [task("a", 0, { labelOffsetX: 9, intervals: [interval("i1", { labelOffsetX: 3 }), interval("i2", { dateLabelOffsetY: 4 })] })],
+    };
+    const s = projectReducer(dirty, { type: "items/labelsReset", ids: { tasks: ["a"], milestones: [] } });
+    expect(s.tasks[0].labelOffsetX).toBe(0);
+    expect(s.tasks[0].intervals).toEqual([interval("i1"), interval("i2")]);
+  });
+
   it("migrates legacy label offsets", () => {
     const legacy: ProjectState = { ...base, tasks: [task("a", 0, { labelOffsetX: 10, labelOffsetY: 0, dateLabelOffsetX: 10, dateLabelOffsetY: 15 })] };
     const s = projectReducer(legacy, { type: "labels/migrated" });

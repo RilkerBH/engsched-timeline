@@ -7,7 +7,7 @@ import {
   shiftMilestoneDates,
   shiftTaskDates,
 } from "@/domain/bulk";
-import { ZERO_OFFSETS, migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "@/domain/label-layout";
+import { type LabelOffsets, ZERO_OFFSETS, migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "@/domain/label-layout";
 
 /**
  * Single source of truth for a project. Every change goes through
@@ -41,7 +41,7 @@ export type ProjectAction =
   | { type: "milestone/deleted"; id: string }
   | { type: "period/saved"; period: PeriodData }
   | { type: "period/deleted"; id: string }
-  | { type: "label/dragged"; item: ItemKind; label: LabelKind; id: string; delta: { x: number; y: number } }
+  | { type: "label/dragged"; item: ItemKind; label: LabelKind; id: string; delta: { x: number; y: number }; intervalId?: string }
   | { type: "items/patched"; ids: Selection; patch: BulkPatch }
   | { type: "items/labelsReset"; ids: Selection }
   | { type: "items/datesShifted"; ids: Selection; days: number }
@@ -53,7 +53,7 @@ function nextOrder(tasks: TaskData[]): number {
   return tasks.length > 0 ? Math.max(...tasks.map(p => p.order)) + 1 : 0;
 }
 
-function dragLabel<T extends TaskData | MilestoneData>(item: T, label: LabelKind, delta: { x: number; y: number }): T {
+function dragLabel<T extends LabelOffsets>(item: T, label: LabelKind, delta: { x: number; y: number }): T {
   if (label === "name") {
     return { ...item, labelOffsetX: (item.labelOffsetX || 0) + delta.x, labelOffsetY: (item.labelOffsetY || 0) + delta.y };
   }
@@ -111,7 +111,16 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
 
     case "label/dragged":
       if (action.item === "task") {
-        return { ...state, tasks: state.tasks.map(p => (p.id === action.id ? dragLabel(p, action.label, action.delta) : p)) };
+        return {
+          ...state,
+          tasks: state.tasks.map(p => {
+            if (p.id !== action.id) return p;
+            if (action.intervalId && p.intervals) {
+              return { ...p, intervals: p.intervals.map(iv => (iv.id === action.intervalId ? dragLabel(iv, action.label, action.delta) : iv)) };
+            }
+            return dragLabel(p, action.label, action.delta);
+          }),
+        };
       }
       return { ...state, milestones: state.milestones.map(m => (m.id === action.id ? dragLabel(m, action.label, action.delta) : m)) };
 
@@ -125,12 +134,18 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
       };
     }
 
-    case "items/labelsReset":
+    case "items/labelsReset": {
+      const resetIds = new Set(action.ids.tasks);
       return {
         ...state,
-        tasks: applyPatch(state.tasks, action.ids.tasks, { ...ZERO_OFFSETS }),
+        tasks: applyPatch(state.tasks, action.ids.tasks, { ...ZERO_OFFSETS }).map(t =>
+          resetIds.has(t.id) && t.intervals
+            ? { ...t, intervals: t.intervals.map(iv => ({ ...iv, ...ZERO_OFFSETS })) }
+            : t
+        ),
         milestones: applyPatch(state.milestones, action.ids.milestones, { ...ZERO_OFFSETS }),
       };
+    }
 
     case "items/datesShifted": {
       if (!state.settings) return state;

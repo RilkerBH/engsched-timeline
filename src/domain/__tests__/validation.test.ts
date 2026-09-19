@@ -47,7 +47,7 @@ describe("taskSchema", () => {
     const result = schema.safeParse({
       ...valid,
       startDate: "2026-02-01", endDate: "2026-02-10",
-      extraIntervals: [{ id: "b", startDate: "2026-03-01", endDate: "2026-03-10" }],
+      extraIntervals: [{ id: "b", name: "Retomada", startDate: "2026-03-01", endDate: "2026-03-10" }],
     });
     expect(result.success).toBe(true);
   });
@@ -56,7 +56,7 @@ describe("taskSchema", () => {
     const result = schema.safeParse({
       ...valid,
       startDate: "2026-02-01", endDate: "2026-02-10",
-      extraIntervals: [{ id: "b", startDate: "2026-02-10", endDate: "2026-02-20" }],
+      extraIntervals: [{ id: "b", name: "b", startDate: "2026-02-10", endDate: "2026-02-20" }],
     });
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -70,8 +70,8 @@ describe("taskSchema", () => {
       ...valid,
       startDate: "2026-01-01", endDate: "2026-01-05",
       extraIntervals: [
-        { id: "b", startDate: "2026-02-01", endDate: "2026-02-10" },
-        { id: "c", startDate: "2026-02-10", endDate: "2026-02-20" },
+        { id: "b", name: "b", startDate: "2026-02-01", endDate: "2026-02-10" },
+        { id: "c", name: "c", startDate: "2026-02-10", endDate: "2026-02-20" },
       ],
     });
     expect(result.success).toBe(false);
@@ -80,10 +80,21 @@ describe("taskSchema", () => {
     }
   });
 
+  it("requires each extra interval to have a name", () => {
+    const result = schema.safeParse({
+      ...valid,
+      extraIntervals: [{ id: "b", name: "", startDate: "2026-03-01", endDate: "2026-03-10" }],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message === MESSAGES.nameRequired && i.path.join(".") === "extraIntervals.0.name")).toBe(true);
+    }
+  });
+
   it("flags an out-of-order or out-of-range extra interval on its own path", () => {
     const badOrder = schema.safeParse({
       ...valid,
-      extraIntervals: [{ id: "b", startDate: "2026-03-10", endDate: "2026-03-01" }],
+      extraIntervals: [{ id: "b", name: "b", startDate: "2026-03-10", endDate: "2026-03-01" }],
     });
     expect(badOrder.success).toBe(false);
     if (!badOrder.success) {
@@ -92,7 +103,7 @@ describe("taskSchema", () => {
 
     const outOfRange = schema.safeParse({
       ...valid,
-      extraIntervals: [{ id: "b", startDate: "2027-01-01", endDate: "2027-01-05" }],
+      extraIntervals: [{ id: "b", name: "b", startDate: "2027-01-01", endDate: "2027-01-05" }],
     });
     expect(outOfRange.success).toBe(false);
     if (!outOfRange.success) {

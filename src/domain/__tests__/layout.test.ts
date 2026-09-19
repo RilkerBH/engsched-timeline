@@ -50,33 +50,47 @@ describe("getMilestonePosition", () => {
 });
 
 describe("getTaskRanges", () => {
-  it("falls back to a single range from startDate/endDate when there is no intervals", () => {
+  it("falls back to a single range using the task's own name/offsets when there is no intervals", () => {
+    const task = { name: "Mobilização", startDate: "2026-03-01", endDate: "2026-03-31", labelOffsetX: 5, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 };
+    expect(getTaskRanges(task)).toEqual([
+      { intervalId: undefined, name: "Mobilização", startDate: "2026-03-01", endDate: "2026-03-31", labelOffsetX: 5, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+    ]);
+  });
+
+  it("defaults missing name/offsets to empty/zero (lightweight fixtures)", () => {
     const task = { startDate: "2026-03-01", endDate: "2026-03-31" };
-    expect(getTaskRanges(task)).toEqual([{ startDate: "2026-03-01", endDate: "2026-03-31" }]);
+    expect(getTaskRanges(task)).toEqual([
+      { intervalId: undefined, name: "", startDate: "2026-03-01", endDate: "2026-03-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+    ]);
   });
 
   it("ignores a single-entry intervals array (not a real split)", () => {
-    const task = { startDate: "2026-03-01", endDate: "2026-03-31", intervals: [{ id: "a", startDate: "2026-03-01", endDate: "2026-03-31" }] };
-    expect(getTaskRanges(task)).toEqual([{ startDate: "2026-03-01", endDate: "2026-03-31" }]);
+    const task = { name: "x", startDate: "2026-03-01", endDate: "2026-03-31", intervals: [{ id: "a", name: "a", startDate: "2026-03-01", endDate: "2026-03-31" }] };
+    expect(getTaskRanges(task)).toHaveLength(1);
+    expect(getTaskRanges(task)[0].intervalId).toBeUndefined();
   });
 
-  it("sorts intervals by startDate regardless of storage order", () => {
+  it("sorts intervals by startDate regardless of storage order, keeping each one's own name/offsets", () => {
     const task = {
       startDate: "2026-03-01",
       endDate: "2026-05-31",
       intervals: [
-        { id: "b", startDate: "2026-05-01", endDate: "2026-05-31" },
-        { id: "a", startDate: "2026-03-01", endDate: "2026-03-31" },
+        { id: "b", name: "Retomada", startDate: "2026-05-01", endDate: "2026-05-31", labelOffsetX: 2, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+        { id: "a", name: "Início", startDate: "2026-03-01", endDate: "2026-03-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
       ],
     };
-    expect(getTaskRanges(task).map(r => r.startDate)).toEqual(["2026-03-01", "2026-05-01"]);
+    const ranges = getTaskRanges(task);
+    expect(ranges.map(r => r.startDate)).toEqual(["2026-03-01", "2026-05-01"]);
+    expect(ranges.map(r => r.name)).toEqual(["Início", "Retomada"]);
+    expect(ranges.map(r => r.intervalId)).toEqual(["a", "b"]);
+    expect(ranges[1].labelOffsetX).toBe(2);
   });
 });
 
 describe("getTaskBars", () => {
   it("gives a single-range task exactly one full-width bar", () => {
     const task = { startDate: "2026-03-01", endDate: "2026-03-31" };
-    expect(getTaskBars(task)).toEqual([{ left: 0, width: 100 }]);
+    expect(getTaskBars(task)).toMatchObject([{ left: 0, width: 100 }]);
   });
 
   it("draws a visible gap between two intervals", () => {
@@ -85,8 +99,8 @@ describe("getTaskBars", () => {
       startDate: "2026-03-01",
       endDate: "2026-05-31",
       intervals: [
-        { id: "a", startDate: "2026-03-01", endDate: "2026-03-31" },
-        { id: "b", startDate: "2026-05-01", endDate: "2026-05-31" },
+        { id: "a", name: "a", startDate: "2026-03-01", endDate: "2026-03-31" },
+        { id: "b", name: "b", startDate: "2026-05-01", endDate: "2026-05-31" },
       ],
     };
     const bars = getTaskBars(task);
@@ -101,8 +115,8 @@ describe("getTaskBars", () => {
       startDate: "2026-03-01",
       endDate: "2026-04-30",
       intervals: [
-        { id: "a", startDate: "2026-03-01", endDate: "2026-03-15" },
-        { id: "b", startDate: "2026-03-16", endDate: "2026-04-30" },
+        { id: "a", name: "a", startDate: "2026-03-01", endDate: "2026-03-15" },
+        { id: "b", name: "b", startDate: "2026-03-16", endDate: "2026-04-30" },
       ],
     };
     const bars = getTaskBars(task);
@@ -111,7 +125,7 @@ describe("getTaskBars", () => {
 
   it("does not divide by zero for a single-day envelope", () => {
     const task = { startDate: "2026-03-01", endDate: "2026-03-01" };
-    expect(getTaskBars(task)).toEqual([{ left: 0, width: 100 }]);
+    expect(getTaskBars(task)).toMatchObject([{ left: 0, width: 100 }]);
   });
 });
 

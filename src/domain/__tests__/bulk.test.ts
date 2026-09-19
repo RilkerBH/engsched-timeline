@@ -104,18 +104,22 @@ describe("shiftTaskDates", () => {
     expect(items[1].startDate).toBe("2026-03-01");
   });
 
-  it("shifts every interval and recomputes the envelope", () => {
+  const iv = (id: string, startDate: string, endDate: string) => ({
+    id, name: id, startDate, endDate, labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0,
+  });
+
+  it("shifts every interval and recomputes the envelope, preserving name/offsets", () => {
     const withIntervals = task("a", 0, {
       startDate: "2026-03-01", endDate: "2026-05-31",
       intervals: [
-        { id: "1", startDate: "2026-03-01", endDate: "2026-03-31" },
-        { id: "2", startDate: "2026-05-01", endDate: "2026-05-31" },
+        { ...iv("1", "2026-03-01", "2026-03-31"), labelOffsetX: 4 },
+        iv("2", "2026-05-01", "2026-05-31"),
       ],
     });
     const { items, outOfRange } = shiftTaskDates([withIntervals], ["a"], 10, ...range);
     expect(items[0].intervals).toEqual([
-      { id: "1", startDate: "2026-03-11", endDate: "2026-04-10" },
-      { id: "2", startDate: "2026-05-11", endDate: "2026-06-10" },
+      { ...iv("1", "2026-03-11", "2026-04-10"), labelOffsetX: 4 },
+      iv("2", "2026-05-11", "2026-06-10"),
     ]);
     expect(items[0]).toMatchObject({ startDate: "2026-03-11", endDate: "2026-06-10" });
     expect(outOfRange).toEqual([]);
@@ -125,8 +129,8 @@ describe("shiftTaskDates", () => {
     const withIntervals = task("a", 0, {
       startDate: "2026-03-01", endDate: "2026-12-31",
       intervals: [
-        { id: "1", startDate: "2026-03-01", endDate: "2026-03-31" },
-        { id: "2", startDate: "2026-12-01", endDate: "2026-12-31" },
+        iv("1", "2026-03-01", "2026-03-31"),
+        iv("2", "2026-12-01", "2026-12-31"),
       ],
     });
     const { items, outOfRange } = shiftTaskDates([withIntervals], ["a"], 10, ...range);

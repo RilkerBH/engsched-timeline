@@ -9,6 +9,19 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.3.0] - 2026-09-19
+
+### Adicionado
+
+- **Nome e data independentes por intervalo**: quando uma tarefa é dividida
+  em intervalos, cada barra agora mostra seu próprio nome e sua própria data
+  (em vez de um nome único centralizado e uma lista combinada de datas).
+  Cada intervalo tem seu próprio campo de nome no formulário e as posições
+  de nome/data de cada barra podem ser arrastadas independentemente.
+- Formato do arquivo `.engsched` sobe para 1.5: cada intervalo agora guarda
+  seu próprio nome e deslocamentos de rótulo. Intervalos de arquivos 1.4
+  (sem esses campos) usam o nome da tarefa e deslocamento zero.
+
 ## [2.2.0] - 2026-09-18
 
 ### Adicionado

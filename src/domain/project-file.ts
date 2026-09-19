@@ -1,4 +1,4 @@
-import type { ProjectFile, ProjectSettings, TaskData, MilestoneData, PeriodData } from "./types";
+import type { ProjectFile, ProjectSettings, TaskData, TaskInterval, MilestoneData, PeriodData } from "./types";
 import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-layout";
 
 /**
@@ -8,8 +8,11 @@ import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-l
  * 1.2 - "servicePackages" renamed to "tasks" (app v2.0.0)
  * 1.3 - "periods" (highlight bands) added; absent in older files (app v2.1.0)
  * 1.4 - "intervals" (multiple date ranges per task) added; absent in older files (app v2.2.0)
+ * 1.5 - each interval gained its own "name" and label offsets (independent per
+ *       interval); older intervals fall back to the task's name and zero
+ *       offsets (app v2.3.0)
  */
-export const PROJECT_FILE_VERSION = "1.4";
+export const PROJECT_FILE_VERSION = "1.5";
 const LEGACY_TASKS_KEY = "servicePackages";
 export const PROJECT_FILE_EXTENSION = ".engsched";
 
@@ -80,6 +83,27 @@ export function deserializeProject(json: string): ProjectFile {
   });
 }
 
+/** Backfills name/label offsets on intervals saved before format 1.5. */
+function migrateTaskIntervals(task: TaskData): TaskData {
+  if (!task.intervals) return task;
+  return {
+    ...task,
+    intervals: task.intervals.map(iv => {
+      const legacy = iv as Partial<TaskInterval>;
+      return {
+        id: iv.id,
+        startDate: iv.startDate,
+        endDate: iv.endDate,
+        name: legacy.name ?? task.name,
+        labelOffsetX: legacy.labelOffsetX ?? 0,
+        labelOffsetY: legacy.labelOffsetY ?? 0,
+        dateLabelOffsetX: legacy.dateLabelOffsetX ?? 0,
+        dateLabelOffsetY: legacy.dateLabelOffsetY ?? 0,
+      };
+    }),
+  };
+}
+
 /**
  * Converts a legacy file to the current format version.
  * Files already at the current version are returned unchanged.
@@ -94,6 +118,8 @@ export function migrateProjectFile(file: ProjectFile): ProjectFile {
   }
   // 1.1 -> 1.2 only renamed the key, which deserializeProject already normalizes
   // 1.2 -> 1.3 only added "periods", defaulted to [] by deserializeProject
+  // 1.3 -> 1.4 only added "intervals", absent (undefined) on older tasks
+  tasks = tasks.map(migrateTaskIntervals);
   return { ...file, version: PROJECT_FILE_VERSION, tasks, milestones, periods: file.periods ?? [] };
 }
 

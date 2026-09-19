@@ -1,14 +1,19 @@
 name: Build Windows
 
 # Gera o executável Windows (pasta zipada + .exe portátil) num runner Windows,
-# sem depender do Mac. Dispara manualmente (Actions > Build Windows > Run
-# workflow) ou automaticamente quando uma Release é publicada, anexando os
-# arquivos à Release.
+# sem depender do Mac. Disparo SEMPRE manual (Actions > Build Windows > Run
+# workflow) — não roda mais sozinho quando uma Release é publicada.
+# Informe "tag" para anexar os artefatos a uma Release existente; deixe em
+# branco para só gerar os artefatos (baixáveis na aba Actions do run).
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
+    inputs:
+      tag:
+        description: "Tag da Release para anexar os artefatos (ex: v2.3.0). Vazio = não anexa."
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -49,8 +54,8 @@ jobs:
           if-no-files-found: error
 
       - name: Anexar à Release
-        if: github.event_name == 'release'
+        if: ${{ inputs.tag != '' }}
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${{ github.event.release.tag_name }}" dist/*.zip dist/*.exe --clobber
+        run: gh release upload "${{ inputs.tag }}" dist/*.zip dist/*.exe --clobber

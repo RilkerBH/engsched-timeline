@@ -7,8 +7,13 @@ export interface ProjectSettings {
 
 export interface TaskInterval {
   id: string;
+  name: string;
   startDate: string; // YYYY-MM-DD (UTC)
   endDate: string;   // YYYY-MM-DD (UTC)
+  labelOffsetX: number;
+  labelOffsetY: number;
+  dateLabelOffsetX: number;
+  dateLabelOffsetY: number;
 }
 
 export interface TaskData {
@@ -21,6 +26,8 @@ export interface TaskData {
    * separate bars on the same row with a gap between them (e.g. a task
    * paused during the rainy season). Present only with 2+ entries; absent
    * means the task is a single continuous bar from startDate to endDate.
+   * Each interval has its own name and label offsets, independent of the
+   * task's own (used below only when intervals is absent).
    */
   intervals?: TaskInterval[];
   color: string;

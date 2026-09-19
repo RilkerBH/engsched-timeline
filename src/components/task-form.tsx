@@ -47,9 +47,10 @@ type Props = {
 
 /**
  * Splits a task's persisted `intervals` into the primary range (shown in the
- * main start/end fields) and the extra ones (shown as additional rows),
+ * main name/start/end fields) and the extra ones (shown as additional rows),
  * sorted by startDate. A task with no (or a single) interval falls back to
- * its own startDate/endDate as the primary range.
+ * its own name/startDate/endDate/offsets as the primary range. Each range
+ * keeps its own label offsets so per-interval drag adjustments survive edits.
  */
 function splitIntervals(defaultValues: TaskData | undefined, projectSettings: { startDate: string, endDate: string }) {
   const sorted = defaultValues?.intervals && defaultValues.intervals.length > 1
@@ -57,8 +58,13 @@ function splitIntervals(defaultValues: TaskData | undefined, projectSettings: { 
     : undefined;
   const primary = sorted?.[0] ?? {
     id: crypto.randomUUID(),
+    name: defaultValues?.name ?? "",
     startDate: defaultValues?.startDate ?? projectSettings.startDate,
     endDate: defaultValues?.endDate ?? projectSettings.endDate,
+    labelOffsetX: defaultValues?.labelOffsetX ?? 0,
+    labelOffsetY: defaultValues?.labelOffsetY ?? 0,
+    dateLabelOffsetX: defaultValues?.dateLabelOffsetX ?? 0,
+    dateLabelOffsetY: defaultValues?.dateLabelOffsetY ?? 0,
   };
   const extraIntervals = sorted?.slice(1) ?? [];
   return { primary, extraIntervals };
@@ -72,7 +78,7 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
     name: "",
     startDate: projectSettings.startDate,
     endDate: projectSettings.endDate,
-    extraIntervals: [] as { id: string; startDate: string; endDate: string }[],
+    extraIntervals: [] as { id: string; name: string; startDate: string; endDate: string }[],
     color: DEFAULT_COLOR,
     height: 32,
     showTextInside: false,
@@ -112,11 +118,34 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
 
   const handleSubmit = (data: z.infer<typeof dynamicSchema>, resetOffsets = false) => {
     const { extraIntervals: extras, ...taskFields } = data;
-    const allRanges = [
-      { id: primary.id, startDate: taskFields.startDate, endDate: taskFields.endDate },
-      ...(extras ?? []),
-    ].sort((a, b) => a.startDate.localeCompare(b.startDate));
 
+    // Each range (primary + extras) keeps its own label offsets, set only by
+    // dragging on the canvas — never part of the form fields themselves.
+    const primaryRange = {
+      id: primary.id,
+      name: taskFields.name,
+      startDate: taskFields.startDate,
+      endDate: taskFields.endDate,
+      labelOffsetX: resetOffsets ? 0 : (primary.labelOffsetX ?? 0),
+      labelOffsetY: resetOffsets ? 0 : (primary.labelOffsetY ?? 0),
+      dateLabelOffsetX: resetOffsets ? 0 : (primary.dateLabelOffsetX ?? 0),
+      dateLabelOffsetY: resetOffsets ? 0 : (primary.dateLabelOffsetY ?? 0),
+    };
+    const extraRanges = (extras ?? []).map(e => {
+      const existing = extraIntervals.find(iv => iv.id === e.id);
+      return {
+        id: e.id,
+        name: e.name,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        labelOffsetX: resetOffsets ? 0 : (existing?.labelOffsetX ?? 0),
+        labelOffsetY: resetOffsets ? 0 : (existing?.labelOffsetY ?? 0),
+        dateLabelOffsetX: resetOffsets ? 0 : (existing?.dateLabelOffsetX ?? 0),
+        dateLabelOffsetY: resetOffsets ? 0 : (existing?.dateLabelOffsetY ?? 0),
+      };
+    });
+
+    const allRanges = [primaryRange, ...extraRanges].sort((a, b) => a.startDate.localeCompare(b.startDate));
     const intervals = allRanges.length > 1 ? allRanges : undefined;
     const startDate = allRanges[0].startDate;
     const endDate = allRanges.reduce((max, r) => (r.endDate > max ? r.endDate : max), allRanges[0].endDate);
@@ -130,17 +159,18 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
       id: defaultValues?.id || crypto.randomUUID(),
       order: defaultValues?.order || 0,
       // Keep manual label position adjustments (or reset them when requested)
-      labelOffsetX: resetOffsets ? 0 : (defaultValues?.labelOffsetX ?? 0),
-      labelOffsetY: resetOffsets ? 0 : (defaultValues?.labelOffsetY ?? 0),
-      dateLabelOffsetX: resetOffsets ? 0 : (defaultValues?.dateLabelOffsetX ?? 0),
-      dateLabelOffsetY: resetOffsets ? 0 : (defaultValues?.dateLabelOffsetY ?? 0),
+      labelOffsetX: primaryRange.labelOffsetX,
+      labelOffsetY: primaryRange.labelOffsetY,
+      dateLabelOffsetX: primaryRange.dateLabelOffsetX,
+      dateLabelOffsetY: primaryRange.dateLabelOffsetY,
     })
     onClose();
   }
 
   const hasCustomOffsets = !!defaultValues && (
-    (defaultValues.labelOffsetX || 0) !== 0 || (defaultValues.labelOffsetY || 0) !== 0 ||
-    (defaultValues.dateLabelOffsetX || 0) !== 0 || (defaultValues.dateLabelOffsetY || 0) !== 0
+    (primary.labelOffsetX || 0) !== 0 || (primary.labelOffsetY || 0) !== 0 ||
+    (primary.dateLabelOffsetX || 0) !== 0 || (primary.dateLabelOffsetY || 0) !== 0 ||
+    extraIntervals.some(iv => (iv.labelOffsetX || 0) !== 0 || (iv.labelOffsetY || 0) !== 0 || (iv.dateLabelOffsetX || 0) !== 0 || (iv.dateLabelOffsetY || 0) !== 0)
   );
   
   return (
@@ -156,7 +186,7 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome da Tarefa</FormLabel>
+                  <FormLabel>{fields.length > 0 ? "Nome do intervalo 1" : "Nome da Tarefa"}</FormLabel>
                   <FormControl>
                     <Textarea {...field} />
                   </FormControl>
@@ -187,7 +217,7 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
                 name="startDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data de Início</FormLabel>
+                    <FormLabel>{fields.length > 0 ? "Início do intervalo 1" : "Data de Início"}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
                     </FormControl>
@@ -200,7 +230,7 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
                 name="endDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data Final</FormLabel>
+                    <FormLabel>{fields.length > 0 ? "Fim do intervalo 1" : "Data Final"}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
                     </FormControl>
@@ -210,29 +240,16 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
               />
             </div>
             {fields.map((field, index) => (
-              <div key={field.rowKey} className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name={`extraIntervals.${index}.startDate`}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Início do intervalo {index + 2}</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="flex gap-2 items-start">
+              <div key={field.rowKey} className="space-y-2 rounded-lg border p-3">
+                <div className="flex items-start gap-2">
                   <FormField
                     control={form.control}
-                    name={`extraIntervals.${index}.endDate`}
+                    name={`extraIntervals.${index}.name`}
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel>Fim do intervalo {index + 2}</FormLabel>
+                        <FormLabel>Nome do intervalo {index + 2}</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
+                          <Textarea {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -242,13 +259,41 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name={`extraIntervals.${index}.startDate`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Início do intervalo {index + 2}</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name={`extraIntervals.${index}.endDate`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fim do intervalo {index + 2}</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             ))}
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => append({ id: crypto.randomUUID(), startDate: projectSettings.startDate, endDate: projectSettings.endDate })}
+              onClick={() => append({ id: crypto.randomUUID(), name: form.getValues('name') || '', startDate: projectSettings.startDate, endDate: projectSettings.endDate })}
             >
               <Plus className="mr-1 h-4 w-4" />
               Adicionar intervalo
