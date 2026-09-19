@@ -1,6 +1,6 @@
 "use client"
 
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import type * as z from "zod"
 import { Button } from "@/components/ui/button"
@@ -27,7 +27,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TaskData } from "@/domain/types"
 import { useEffect } from "react"
-import { RotateCcw, Trash2 } from "lucide-react"
+import { Plus, RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
 import { DEFAULT_COLOR } from "@/domain/colors"
 import { TASK_HEIGHT, taskSchema } from "@/domain/validation"
@@ -45,13 +45,34 @@ type Props = {
   defaultValues?: TaskData
 }
 
+/**
+ * Splits a task's persisted `intervals` into the primary range (shown in the
+ * main start/end fields) and the extra ones (shown as additional rows),
+ * sorted by startDate. A task with no (or a single) interval falls back to
+ * its own startDate/endDate as the primary range.
+ */
+function splitIntervals(defaultValues: TaskData | undefined, projectSettings: { startDate: string, endDate: string }) {
+  const sorted = defaultValues?.intervals && defaultValues.intervals.length > 1
+    ? [...defaultValues.intervals].sort((a, b) => a.startDate.localeCompare(b.startDate))
+    : undefined;
+  const primary = sorted?.[0] ?? {
+    id: crypto.randomUUID(),
+    startDate: defaultValues?.startDate ?? projectSettings.startDate,
+    endDate: defaultValues?.endDate ?? projectSettings.endDate,
+  };
+  const extraIntervals = sorted?.slice(1) ?? [];
+  return { primary, extraIntervals };
+}
+
 export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings, defaultValues }: Props) {
   const dynamicSchema = taskSchema(projectSettings);
-  
+  const { primary, extraIntervals } = splitIntervals(defaultValues, projectSettings);
+
   const initialFormValues = {
     name: "",
     startDate: projectSettings.startDate,
     endDate: projectSettings.endDate,
+    extraIntervals: [] as { id: string; startDate: string; endDate: string }[],
     color: DEFAULT_COLOR,
     height: 32,
     showTextInside: false,
@@ -59,29 +80,53 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
     preventNameLineBreak: false,
     dateFormat: 'dd/MM/yyyy' as const,
   };
-  
+
   const form = useForm<z.infer<typeof dynamicSchema>>({
     resolver: zodResolver(dynamicSchema),
     defaultValues: {
       ...initialFormValues,
       ...(defaultValues || {}),
+      startDate: primary.startDate,
+      endDate: primary.endDate,
+      extraIntervals,
       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
     }
   })
 
+  const { fields, append, remove, replace } = useFieldArray({ control: form.control, name: "extraIntervals", keyName: "rowKey" });
+
   useEffect(() => {
+    const { primary, extraIntervals } = splitIntervals(defaultValues, projectSettings);
     form.reset({
       ...initialFormValues,
       ...(defaultValues || {}),
-       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
+      startDate: primary.startDate,
+      endDate: primary.endDate,
+      extraIntervals,
+      dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
     });
+    replace(extraIntervals);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValues, form, projectSettings.startDate, projectSettings.endDate]);
 
 
   const handleSubmit = (data: z.infer<typeof dynamicSchema>, resetOffsets = false) => {
+    const { extraIntervals: extras, ...taskFields } = data;
+    const allRanges = [
+      { id: primary.id, startDate: taskFields.startDate, endDate: taskFields.endDate },
+      ...(extras ?? []),
+    ].sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+    const intervals = allRanges.length > 1 ? allRanges : undefined;
+    const startDate = allRanges[0].startDate;
+    const endDate = allRanges.reduce((max, r) => (r.endDate > max ? r.endDate : max), allRanges[0].endDate);
+
     onSubmit({
       ...defaultValues,
-      ...data,
+      ...taskFields,
+      startDate,
+      endDate,
+      intervals,
       id: defaultValues?.id || crypto.randomUUID(),
       order: defaultValues?.order || 0,
       // Keep manual label position adjustments (or reset them when requested)
@@ -100,7 +145,7 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-headline">{defaultValues ? "Editar" : "Nova"} Tarefa</DialogTitle>
         </DialogHeader>
@@ -164,6 +209,50 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
                 )}
               />
             </div>
+            {fields.map((field, index) => (
+              <div key={field.rowKey} className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name={`extraIntervals.${index}.startDate`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Início do intervalo {index + 2}</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex gap-2 items-start">
+                  <FormField
+                    control={form.control}
+                    name={`extraIntervals.${index}.endDate`}
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormLabel>Fim do intervalo {index + 2}</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} min={projectSettings.startDate} max={projectSettings.endDate} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="button" variant="ghost" size="icon" className="mt-8" onClick={() => remove(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => append({ id: crypto.randomUUID(), startDate: projectSettings.startDate, endDate: projectSettings.endDate })}
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Adicionar intervalo
+            </Button>
             <FormField
               control={form.control}
               name="dateFormat"

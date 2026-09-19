@@ -9,6 +9,18 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.2.0] - 2026-09-18
+
+### Adicionado
+
+- **Intervalos**: uma tarefa pode ser dividida em 2 ou mais intervalos de
+  datas, desenhados como barras separadas na mesma linha (mesmo nome, cor,
+  altura e ordem), com um espaço vazio entre elas — útil para tarefas que
+  pausam e retomam (ex.: mobilização interrompida pelo período chuvoso).
+  Botão *Adicionar intervalo* no formulário da tarefa.
+- Formato do arquivo `.engsched` sobe para 1.4 com a chave `intervals` nas
+  tarefas. Arquivos de versões anteriores continuam abrindo normalmente.
+
 ## [2.1.0] - 2026-09-15
 
 ### Adicionado

@@ -104,13 +104,17 @@ export function shiftTaskDates(
   const outOfRange: string[] = [];
   const items = tasks.map(p => {
     if (!set.has(p.id) || days === 0) return p;
-    const startDate = shiftIso(p.startDate, days);
-    const endDate = shiftIso(p.endDate, days);
+
+    const intervals = p.intervals?.map(r => ({ ...r, startDate: shiftIso(r.startDate, days), endDate: shiftIso(r.endDate, days) }));
+    const ranges = intervals ?? [{ startDate: shiftIso(p.startDate, days), endDate: shiftIso(p.endDate, days) }];
+    const startDate = ranges.reduce((min, r) => (r.startDate < min ? r.startDate : min), ranges[0].startDate);
+    const endDate = ranges.reduce((max, r) => (r.endDate > max ? r.endDate : max), ranges[0].endDate);
+
     if (startDate < projectStart || endDate > projectEnd) {
       outOfRange.push(p.id);
       return p;
     }
-    return { ...p, startDate, endDate };
+    return { ...p, startDate, endDate, ...(intervals ? { intervals } : {}) };
   });
   return { items, outOfRange };
 }

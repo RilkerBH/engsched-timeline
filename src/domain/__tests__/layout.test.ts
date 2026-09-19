@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMilestonePosition, getMonthHeaders, getPositionAndWidth, inclusiveDays } from "@/domain/layout";
+import { getMilestonePosition, getMonthHeaders, getPositionAndWidth, getTaskBars, getTaskRanges, inclusiveDays } from "@/domain/layout";
 
 const P = ["2026-01-01", "2026-12-31"] as const; // 365 days, both ends inclusive
 
@@ -46,6 +46,72 @@ describe("getMilestonePosition", () => {
     expect(getMilestonePosition("2026-12-31", ...P)).toBeCloseTo((364 / 365) * 100, 5);
     // The milestone sits where a task starting the same day starts
     expect(getMilestonePosition("2026-06-10", ...P)).toBeCloseTo(getPositionAndWidth("2026-06-10", "2026-06-10", ...P).left, 10);
+  });
+});
+
+describe("getTaskRanges", () => {
+  it("falls back to a single range from startDate/endDate when there is no intervals", () => {
+    const task = { startDate: "2026-03-01", endDate: "2026-03-31" };
+    expect(getTaskRanges(task)).toEqual([{ startDate: "2026-03-01", endDate: "2026-03-31" }]);
+  });
+
+  it("ignores a single-entry intervals array (not a real split)", () => {
+    const task = { startDate: "2026-03-01", endDate: "2026-03-31", intervals: [{ id: "a", startDate: "2026-03-01", endDate: "2026-03-31" }] };
+    expect(getTaskRanges(task)).toEqual([{ startDate: "2026-03-01", endDate: "2026-03-31" }]);
+  });
+
+  it("sorts intervals by startDate regardless of storage order", () => {
+    const task = {
+      startDate: "2026-03-01",
+      endDate: "2026-05-31",
+      intervals: [
+        { id: "b", startDate: "2026-05-01", endDate: "2026-05-31" },
+        { id: "a", startDate: "2026-03-01", endDate: "2026-03-31" },
+      ],
+    };
+    expect(getTaskRanges(task).map(r => r.startDate)).toEqual(["2026-03-01", "2026-05-01"]);
+  });
+});
+
+describe("getTaskBars", () => {
+  it("gives a single-range task exactly one full-width bar", () => {
+    const task = { startDate: "2026-03-01", endDate: "2026-03-31" };
+    expect(getTaskBars(task)).toEqual([{ left: 0, width: 100 }]);
+  });
+
+  it("draws a visible gap between two intervals", () => {
+    // Envelope: 2026-03-01..2026-05-31 (92 days). A: 03-01..03-31 (31d). B: 05-01..05-31 (31d).
+    const task = {
+      startDate: "2026-03-01",
+      endDate: "2026-05-31",
+      intervals: [
+        { id: "a", startDate: "2026-03-01", endDate: "2026-03-31" },
+        { id: "b", startDate: "2026-05-01", endDate: "2026-05-31" },
+      ],
+    };
+    const bars = getTaskBars(task);
+    expect(bars).toHaveLength(2);
+    expect(bars[0].left).toBe(0);
+    expect(bars[0].left + bars[0].width).toBeLessThan(bars[1].left);
+    expect(bars[1].left + bars[1].width).toBeCloseTo(100, 10);
+  });
+
+  it("touches exactly with no gap for adjacent intervals", () => {
+    const task = {
+      startDate: "2026-03-01",
+      endDate: "2026-04-30",
+      intervals: [
+        { id: "a", startDate: "2026-03-01", endDate: "2026-03-15" },
+        { id: "b", startDate: "2026-03-16", endDate: "2026-04-30" },
+      ],
+    };
+    const bars = getTaskBars(task);
+    expect(bars[0].left + bars[0].width).toBeCloseTo(bars[1].left, 10);
+  });
+
+  it("does not divide by zero for a single-day envelope", () => {
+    const task = { startDate: "2026-03-01", endDate: "2026-03-01" };
+    expect(getTaskBars(task)).toEqual([{ left: 0, width: 100 }]);
   });
 });
 

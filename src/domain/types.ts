@@ -5,11 +5,24 @@ export interface ProjectSettings {
   endDate: string;     // YYYY-MM-DD (UTC)
 }
 
+export interface TaskInterval {
+  id: string;
+  startDate: string; // YYYY-MM-DD (UTC)
+  endDate: string;   // YYYY-MM-DD (UTC)
+}
+
 export interface TaskData {
   id: string;
   name: string;
-  startDate: string;
-  endDate: string;
+  startDate: string;   // envelope: min(intervals[].startDate) when intervals is set
+  endDate: string;     // envelope: max(intervals[].endDate) when intervals is set
+  /**
+   * Extra date ranges ("intervalos") the task is split into, drawn as
+   * separate bars on the same row with a gap between them (e.g. a task
+   * paused during the rainy season). Present only with 2+ entries; absent
+   * means the task is a single continuous bar from startDate to endDate.
+   */
+  intervals?: TaskInterval[];
   color: string;
   height: number;      // 16‒80 px
   order: number;

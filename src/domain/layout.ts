@@ -73,20 +73,58 @@ export interface TaskLayout {
   top: number;    // px from the top of the rows container
 }
 
+export interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export interface TaskBar {
+  left: number;   // % of the TASK'S OWN bounding box (envelope), not the timeline
+  width: number;  // %
+}
+
+type IntervalTask = { startDate: string; endDate: string; intervals?: DateRange[] };
+
+/**
+ * Returns the task's date ranges (its `intervals` when set, otherwise a
+ * single range built from startDate/endDate), always sorted by startDate —
+ * the persisted `intervals` array has no guaranteed order.
+ */
+export function getTaskRanges<T extends IntervalTask>(task: T): DateRange[] {
+  const ranges = task.intervals && task.intervals.length > 1 ? task.intervals : [{ startDate: task.startDate, endDate: task.endDate }];
+  return [...ranges].sort((a, b) => a.startDate.localeCompare(b.startDate));
+}
+
+/**
+ * Positions each of the task's ranges as a bar INSIDE the task's own
+ * bounding box (envelope = startDate..endDate), expressed as a % of that
+ * box's own width — not of the timeline. A single-range task always gets
+ * exactly one bar at {left: 0, width: 100}.
+ */
+export function getTaskBars<T extends IntervalTask>(task: T): TaskBar[] {
+  const ranges = getTaskRanges(task);
+  const envelopeDays = inclusiveDays(task.startDate, task.endDate);
+  if (envelopeDays <= 0) return ranges.map(() => ({ left: 0, width: 0 }));
+  return ranges.map(r => ({
+    left: (differenceInDays(parseISO(r.startDate), parseISO(task.startDate)) / envelopeDays) * 100,
+    width: (inclusiveDays(r.startDate, r.endDate) / envelopeDays) * 100,
+  }));
+}
+
 /**
  * Stacks tasks vertically in `order`, each one `gap` px below the previous.
  * Returns the rows and the total container height (with a bottom padding of `gap`).
  */
-export function layoutTaskRows<T extends { order: number; height: number; startDate: string; endDate: string }>(
+export function layoutTaskRows<T extends { order: number; height: number; startDate: string; endDate: string; intervals?: DateRange[] }>(
   tasks: T[],
   projectStartDate: string,
   projectEndDate: string,
   gap: number
-): { rows: (T & TaskLayout)[]; height: number } {
+): { rows: (T & TaskLayout & { bars: TaskBar[] })[]; height: number } {
   const sorted = [...tasks].sort((a, b) => a.order - b.order);
   let top = 0;
   const rows = sorted.map(task => {
-    const row = { ...task, ...getPositionAndWidth(task.startDate, task.endDate, projectStartDate, projectEndDate), top };
+    const row = { ...task, ...getPositionAndWidth(task.startDate, task.endDate, projectStartDate, projectEndDate), bars: getTaskBars(task), top };
     top += task.height + gap;
     return row;
   });

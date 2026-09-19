@@ -42,6 +42,63 @@ describe("taskSchema", () => {
     expect(firstMessage(schema.safeParse({ ...valid, color: "blue" }))).toEqual(["color", MESSAGES.invalidColor]);
     expect(schema.safeParse({ ...valid, height: 100 }).success).toBe(false);
   });
+
+  it("accepts non-overlapping extra intervals", () => {
+    const result = schema.safeParse({
+      ...valid,
+      startDate: "2026-02-01", endDate: "2026-02-10",
+      extraIntervals: [{ id: "b", startDate: "2026-03-01", endDate: "2026-03-10" }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an extra interval overlapping the primary range", () => {
+    const result = schema.safeParse({
+      ...valid,
+      startDate: "2026-02-01", endDate: "2026-02-10",
+      extraIntervals: [{ id: "b", startDate: "2026-02-10", endDate: "2026-02-20" }],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const issue = result.error.issues.find(i => i.message === MESSAGES.intervalsOverlap);
+      expect(issue?.path).toEqual(["extraIntervals", 0, "startDate"]);
+    }
+  });
+
+  it("rejects two extra intervals that overlap each other, even with zero gap", () => {
+    const result = schema.safeParse({
+      ...valid,
+      startDate: "2026-01-01", endDate: "2026-01-05",
+      extraIntervals: [
+        { id: "b", startDate: "2026-02-01", endDate: "2026-02-10" },
+        { id: "c", startDate: "2026-02-10", endDate: "2026-02-20" },
+      ],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some(i => i.message === MESSAGES.intervalsOverlap)).toBe(true);
+    }
+  });
+
+  it("flags an out-of-order or out-of-range extra interval on its own path", () => {
+    const badOrder = schema.safeParse({
+      ...valid,
+      extraIntervals: [{ id: "b", startDate: "2026-03-10", endDate: "2026-03-01" }],
+    });
+    expect(badOrder.success).toBe(false);
+    if (!badOrder.success) {
+      expect(badOrder.error.issues.some(i => i.message === MESSAGES.endOnOrAfterStart && i.path.join(".") === "extraIntervals.0.endDate")).toBe(true);
+    }
+
+    const outOfRange = schema.safeParse({
+      ...valid,
+      extraIntervals: [{ id: "b", startDate: "2027-01-01", endDate: "2027-01-05" }],
+    });
+    expect(outOfRange.success).toBe(false);
+    if (!outOfRange.success) {
+      expect(outOfRange.error.issues.some(i => i.message === MESSAGES.startWithinProject && i.path.join(".") === "extraIntervals.0.startDate")).toBe(true);
+    }
+  });
 });
 
 describe("milestoneSchema", () => {

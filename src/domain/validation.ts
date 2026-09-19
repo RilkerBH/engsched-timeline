@@ -21,6 +21,7 @@ export const MESSAGES = {
   endWithinProject: "A data final deve estar dentro do período do projeto",
   dateWithinProject: "A data deve estar dentro do período do projeto",
   invalidColor: "Cor inválida. Use o formato #RRGGBB.",
+  intervalsOverlap: "Os intervalos não podem se sobrepor",
 } as const;
 
 export interface DateRange {
@@ -49,20 +50,44 @@ export function taskSchema(project: DateRange) {
     name: z.string().min(1, MESSAGES.nameRequired),
     startDate: z.string(),
     endDate: z.string(),
+    extraIntervals: z.array(z.object({
+      id: z.string(),
+      startDate: z.string(),
+      endDate: z.string(),
+    })).optional(),
     color: z.string().refine(isValidHex, MESSAGES.invalidColor),
     height: z.number().min(TASK_HEIGHT.min).max(TASK_HEIGHT.max),
     showTextInside: z.boolean(),
     preventNameLineBreak: z.boolean().optional(),
     dateFormat: z.enum(DATE_FORMATS).optional(),
   }).superRefine((data, ctx) => {
-    if (data.startDate > data.endDate) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endOnOrAfterStart, path: ["endDate"] });
+    const ranges = [
+      { startDate: data.startDate, endDate: data.endDate, startPath: ["startDate"] as (string | number)[], endPath: ["endDate"] as (string | number)[] },
+      ...(data.extraIntervals ?? []).map((r, i) => ({
+        startDate: r.startDate,
+        endDate: r.endDate,
+        startPath: ["extraIntervals", i, "startDate"] as (string | number)[],
+        endPath: ["extraIntervals", i, "endDate"] as (string | number)[],
+      })),
+    ];
+
+    for (const r of ranges) {
+      if (r.startDate > r.endDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endOnOrAfterStart, path: r.endPath });
+      }
+      if (!isWithinRange(r.startDate, project)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.startWithinProject, path: r.startPath });
+      }
+      if (!isWithinRange(r.endDate, project)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endWithinProject, path: r.endPath });
+      }
     }
-    if (!isWithinRange(data.startDate, project)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.startWithinProject, path: ["startDate"] });
-    }
-    if (!isWithinRange(data.endDate, project)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endWithinProject, path: ["endDate"] });
+
+    const sorted = [...ranges].sort((a, b) => a.startDate.localeCompare(b.startDate));
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i].startDate <= sorted[i - 1].endDate) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.intervalsOverlap, path: sorted[i].startPath });
+      }
     }
   });
 }

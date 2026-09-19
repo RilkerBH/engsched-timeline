@@ -1,6 +1,8 @@
 "use client"
 
 import type { TaskData } from "@/domain/types"
+import type { TaskBar } from "@/domain/layout"
+import { getTaskRanges } from "@/domain/layout"
 import { useDraggable } from "@dnd-kit/core"
 import { ArrowDown, ArrowUp } from "lucide-react"
 import { Button } from "./ui/button"
@@ -11,7 +13,7 @@ import { cn } from "@/lib/utils"
 import { LABEL_LAYOUT } from "@/domain/label-layout"
 
 type TaskRowProps = {
-  task: TaskData & { left: number; width: number; top: number; }
+  task: TaskData & { left: number; width: number; top: number; bars: TaskBar[]; }
   onDoubleClick: () => void
   onOrderChange: (direction: 'up' | 'down') => void
   selected?: boolean
@@ -38,13 +40,11 @@ export function TaskRow({ task, onDoubleClick, onOrderChange, selected = false, 
   });
 
   const displayFormat = task.dateFormat === 'MMM/yy' ? 'MMM/yy' : 'dd/MM/yyyy';
-  const formattedStartDate = format(parseISO(task.startDate), displayFormat, { locale: ptBR });
-  const formattedEndDate = format(parseISO(task.endDate), displayFormat, { locale: ptBR });
-  const formattedDateRange = `${formattedStartDate} - ${formattedEndDate}`;
-
-  const tooltipStartDate = format(parseISO(task.startDate), 'dd/MM/yyyy', { locale: ptBR });
-  const tooltipEndDate = format(parseISO(task.endDate), 'dd/MM/yyyy', { locale: ptBR });
-  const tooltipDateRange = `${tooltipStartDate} - ${tooltipEndDate}`;
+  const ranges = getTaskRanges(task);
+  const formatRange = (r: { startDate: string; endDate: string }, fmt: string) =>
+    `${format(parseISO(r.startDate), fmt, { locale: ptBR })} - ${format(parseISO(r.endDate), fmt, { locale: ptBR })}`;
+  const formattedDateRange = ranges.map(r => formatRange(r, displayFormat)).join(", ");
+  const tooltipDateRange = ranges.map(r => formatRange(r, 'dd/MM/yyyy')).join(", ");
 
 
   const nameDndTransform = nameDraggable.transform ? ` translate3d(${nameDraggable.transform.x}px, ${nameDraggable.transform.y}px, 0)` : '';
@@ -113,14 +113,20 @@ export function TaskRow({ task, onDoubleClick, onOrderChange, selected = false, 
         <Tooltip>
           <TooltipTrigger asChild>
             <div
-              className={cn(
-                "h-full w-full rounded-md shadow-md transition-all duration-150 flex items-center justify-center overflow-hidden cursor-pointer",
-                selected && "ring-2 ring-offset-2 ring-primary"
-              )}
-              style={{ backgroundColor: task.color }}
+              className="relative h-full w-full cursor-pointer"
               onClick={(e) => onSelect?.(e)}
               onDoubleClick={onDoubleClick}
             >
+              {task.bars.map((bar, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "absolute top-0 h-full rounded-md shadow-md transition-all duration-150 overflow-hidden",
+                    selected && "ring-2 ring-offset-2 ring-primary"
+                  )}
+                  style={{ backgroundColor: task.color, left: `${bar.left}%`, width: `${bar.width}%` }}
+                />
+              ))}
               <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-0.5 z-10">
                 <Button variant="ghost" size="icon" className="h-5 w-5 bg-black/20 hover:bg-black/40 text-white" onClick={(e) => {e.stopPropagation(); onOrderChange('up')}}>
                   <ArrowUp className="h-3 w-3" />

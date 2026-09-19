@@ -103,6 +103,36 @@ describe("shiftTaskDates", () => {
     const { items } = shiftTaskDates([task("a", 0), task("b", 1)], ["a"], 5, ...range);
     expect(items[1].startDate).toBe("2026-03-01");
   });
+
+  it("shifts every interval and recomputes the envelope", () => {
+    const withIntervals = task("a", 0, {
+      startDate: "2026-03-01", endDate: "2026-05-31",
+      intervals: [
+        { id: "1", startDate: "2026-03-01", endDate: "2026-03-31" },
+        { id: "2", startDate: "2026-05-01", endDate: "2026-05-31" },
+      ],
+    });
+    const { items, outOfRange } = shiftTaskDates([withIntervals], ["a"], 10, ...range);
+    expect(items[0].intervals).toEqual([
+      { id: "1", startDate: "2026-03-11", endDate: "2026-04-10" },
+      { id: "2", startDate: "2026-05-11", endDate: "2026-06-10" },
+    ]);
+    expect(items[0]).toMatchObject({ startDate: "2026-03-11", endDate: "2026-06-10" });
+    expect(outOfRange).toEqual([]);
+  });
+
+  it("blocks the whole task, untouched, if any interval would leave the project range", () => {
+    const withIntervals = task("a", 0, {
+      startDate: "2026-03-01", endDate: "2026-12-31",
+      intervals: [
+        { id: "1", startDate: "2026-03-01", endDate: "2026-03-31" },
+        { id: "2", startDate: "2026-12-01", endDate: "2026-12-31" },
+      ],
+    });
+    const { items, outOfRange } = shiftTaskDates([withIntervals], ["a"], 10, ...range);
+    expect(items[0].intervals).toEqual(withIntervals.intervals);
+    expect(outOfRange).toEqual(["a"]);
+  });
 });
 
 describe("shiftMilestoneDates", () => {

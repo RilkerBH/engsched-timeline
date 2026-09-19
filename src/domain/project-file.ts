@@ -7,8 +7,9 @@ import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-l
  * 1.1 - label offsets become adjustments over the default position (app v1.4.0)
  * 1.2 - "servicePackages" renamed to "tasks" (app v2.0.0)
  * 1.3 - "periods" (highlight bands) added; absent in older files (app v2.1.0)
+ * 1.4 - "intervals" (multiple date ranges per task) added; absent in older files (app v2.2.0)
  */
-export const PROJECT_FILE_VERSION = "1.3";
+export const PROJECT_FILE_VERSION = "1.4";
 const LEGACY_TASKS_KEY = "servicePackages";
 export const PROJECT_FILE_EXTENSION = ".engsched";
 
