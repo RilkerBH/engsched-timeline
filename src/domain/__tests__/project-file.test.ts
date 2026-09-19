@@ -25,7 +25,7 @@ describe("serialize / deserialize", () => {
   it("reads tasks from the legacy servicePackages key (formats 1.0 and 1.1)", () => {
     const task = { id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01", color: "#000", height: 32, showTextInside: false, labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 };
     const back = deserializeProject(JSON.stringify({ version: "1.1", projectSettings: null, servicePackages: [task], milestones: [] }));
-    expect(back.version).toBe("1.5");
+    expect(back.version).toBe("1.6");
     expect(back.tasks).toEqual([task]);
     expect(back).not.toHaveProperty("servicePackages");
   });
@@ -39,7 +39,7 @@ describe("migrateProjectFile", () => {
       milestones: [{ id: "m", name: "m", date: "2026-01-10", color: "#000", height: 30, labelOffsetX: 0, labelOffsetY: -10, dateLabelOffsetX: 0, dateLabelOffsetY: 15 }],
     }));
     const migrated = migrateProjectFile(legacy);
-    expect(migrated.version).toBe("1.5");
+    expect(migrated.version).toBe("1.6");
     expect(migrated.tasks[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
     expect(migrated.milestones[0]).toMatchObject({ labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 });
   });
@@ -57,23 +57,30 @@ describe("getProjectFileName", () => {
   });
 });
 
-describe("periods (format 1.3)", () => {
-  const period = { id: "r", name: "Chuvas", startDate: "2026-01-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25 };
+describe("periods (format 1.3/1.6)", () => {
+  const period = { id: "r", name: "Chuvas", startDate: "2026-01-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25, borderStyle: "dashed" as const, borderColor: "#2E75B6", labelOffsetX: 0, labelOffsetY: 0 };
 
   it("round-trips periods", () => {
     const file = createProjectFile(settings, [], [], [period]);
-    expect(file.version).toBe("1.5");
+    expect(file.version).toBe("1.6");
     expect(deserializeProject(serializeProject(file)).periods).toEqual([period]);
   });
 
   it("defaults periods to [] when reading 1.2 files and stamps the current version", () => {
     const back = deserializeProject(JSON.stringify({ version: "1.2", projectSettings: null, tasks: [], milestones: [] }));
-    expect(back.version).toBe("1.5");
+    expect(back.version).toBe("1.6");
     expect(back.periods).toEqual([]);
   });
 
   it("rejects a corrupt periods field", () => {
     expect(() => deserializeProject(JSON.stringify({ version: "1.3", projectSettings: null, tasks: [], milestones: [], periods: "x" }))).toThrow(/períodos/);
+  });
+
+  it("backfills legend offsets and border defaults on periods saved before format 1.6", () => {
+    const legacyPeriod = { id: "r", name: "Chuvas", startDate: "2026-01-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25 };
+    const back = deserializeProject(JSON.stringify({ version: "1.5", projectSettings: null, tasks: [], milestones: [], periods: [legacyPeriod] }));
+    expect(back.version).toBe("1.6");
+    expect(back.periods).toEqual([{ ...legacyPeriod, labelOffsetX: 0, labelOffsetY: 0, borderStyle: "none", borderColor: "#5B9BD5" }]);
   });
 });
 
@@ -91,14 +98,14 @@ describe("intervals (format 1.4/1.5)", () => {
 
   it("round-trips a task with intervals", () => {
     const file = createProjectFile(settings, [taskWithIntervals], []);
-    expect(file.version).toBe("1.5");
+    expect(file.version).toBe("1.6");
     expect(deserializeProject(serializeProject(file)).tasks).toEqual([taskWithIntervals]);
   });
 
   it("opens a 1.3 file (no intervals) with tasks left unchanged", () => {
     const task = { id: "a", name: "a", order: 0, startDate: "2026-01-01", endDate: "2026-02-01", color: "#000", height: 32, showTextInside: false, labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 };
     const back = deserializeProject(JSON.stringify({ version: "1.3", projectSettings: null, tasks: [task], milestones: [], periods: [] }));
-    expect(back.version).toBe("1.5");
+    expect(back.version).toBe("1.6");
     expect(back.tasks).toEqual([task]);
   });
 
@@ -114,7 +121,7 @@ describe("intervals (format 1.4/1.5)", () => {
       labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0,
     };
     const back = deserializeProject(JSON.stringify({ version: "1.4", projectSettings: null, tasks: [legacyTask], milestones: [], periods: [] }));
-    expect(back.version).toBe("1.5");
+    expect(back.version).toBe("1.6");
     expect(back.tasks[0].intervals).toEqual([
       { id: "1", name: "Mobilização", startDate: "2026-03-01", endDate: "2026-03-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
       { id: "2", name: "Mobilização", startDate: "2026-05-01", endDate: "2026-05-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },

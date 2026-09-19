@@ -9,6 +9,21 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.4.0] - 2026-09-19
+
+### Adicionado
+
+- **Legenda do período**: o nome de um período de destaque agora aparece numa
+  legenda separada, com o mesmo visual da própria faixa (cor, transparência e
+  borda), numa posição padrão dentro dela — pode ser arrastada com o mouse
+  para qualquer lugar, igual aos textos de tarefas e marcos.
+- **Borda personalizável do período**: estilo (nenhuma, sólida, tracejada ou
+  pontilhada) e cor da borda configuráveis por período.
+- Faixa do período com bordas mais arredondadas.
+- Formato do arquivo `.engsched` sobe para 1.6: períodos agora guardam o
+  deslocamento da legenda e o estilo/cor da borda. Períodos de arquivos 1.5
+  (sem esses campos) abrem sem borda e com a legenda na posição padrão.
+
 ## [2.3.0] - 2026-09-19
 
 ### Adicionado

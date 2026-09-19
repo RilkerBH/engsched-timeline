@@ -24,10 +24,18 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ColorPicker } from "@/components/color-picker"
 import type { PeriodData } from "@/domain/types"
 import { DEFAULT_PERIOD_COLOR, DEFAULT_PERIOD_OPACITY, hexToRgba } from "@/domain/colors"
-import { PERIOD_OPACITY, periodSchema } from "@/domain/validation"
+import { PERIOD_BORDER_STYLES, PERIOD_OPACITY, periodSchema } from "@/domain/validation"
+
+const BORDER_STYLE_LABELS: Record<(typeof PERIOD_BORDER_STYLES)[number], string> = {
+  none: "Nenhuma",
+  solid: "Sólida",
+  dashed: "Tracejada",
+  dotted: "Pontilhada",
+}
 
 type Props = {
   isOpen: boolean
@@ -47,6 +55,8 @@ export function PeriodForm({ isOpen, onClose, onSubmit, onDelete, projectSetting
     endDate: projectSettings.endDate,
     color: DEFAULT_PERIOD_COLOR,
     opacity: DEFAULT_PERIOD_OPACITY,
+    borderStyle: "none" as const,
+    borderColor: DEFAULT_PERIOD_COLOR,
   }
 
   const form = useForm<z.infer<typeof dynamicSchema>>({
@@ -60,12 +70,19 @@ export function PeriodForm({ isOpen, onClose, onSubmit, onDelete, projectSetting
   }, [defaultValues, form, projectSettings.startDate, projectSettings.endDate])
 
   const handleSubmit = (data: z.infer<typeof dynamicSchema>) => {
-    onSubmit({ ...defaultValues, ...data, id: defaultValues?.id || crypto.randomUUID() })
+    onSubmit({
+      labelOffsetX: 0,
+      labelOffsetY: 0,
+      ...defaultValues,
+      ...data,
+      id: defaultValues?.id || crypto.randomUUID(),
+    })
     onClose()
   }
 
   const previewColor = form.watch("color")
   const previewOpacity = form.watch("opacity")
+  const borderStyle = form.watch("borderStyle")
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -155,6 +172,43 @@ export function PeriodForm({ isOpen, onClose, onSubmit, onDelete, projectSetting
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="borderStyle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Estilo da Borda</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PERIOD_BORDER_STYLES.map(style => (
+                        <SelectItem key={style} value={style}>{BORDER_STYLE_LABELS[style]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {borderStyle !== "none" && (
+              <FormField
+                control={form.control}
+                name="borderColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cor da Borda</FormLabel>
+                    <FormControl>
+                      <ColorPicker value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter className="sm:justify-between pt-4 border-t">
               <div className="flex items-center gap-2">
                 {defaultValues && onDelete && (

@@ -121,11 +121,17 @@ describe("milestoneSchema", () => {
 });
 
 describe("periodSchema", () => {
-  const valid = { name: "", startDate: "2026-02-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25 };
+  const valid = { name: "", startDate: "2026-02-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25, borderStyle: "none" as const, borderColor: "#5B9BD5" };
   const schema = periodSchema(project);
 
   it("accepts an empty name", () => {
     expect(schema.safeParse(valid).success).toBe(true);
+  });
+
+  it("validates the border style and color", () => {
+    expect(schema.safeParse({ ...valid, borderStyle: "dashed" }).success).toBe(true);
+    expect(schema.safeParse({ ...valid, borderStyle: "diagonal" }).success).toBe(false);
+    expect(firstMessage(schema.safeParse({ ...valid, borderStyle: "dashed", borderColor: "blue" }))).toEqual(["borderColor", MESSAGES.invalidColor]);
   });
 
   it("requires end on or after start and both inside the project", () => {

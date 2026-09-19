@@ -124,7 +124,7 @@ export default function TimelineApp() {
     const data = event.active.data.current as { type?: string; id?: string; intervalId?: string } | undefined
     if (!data?.type || !data.id) return
     const [label, item] = data.type.split("-")
-    if ((label !== "name" && label !== "date") || (item !== "task" && item !== "milestone")) return
+    if ((label !== "name" && label !== "date") || (item !== "task" && item !== "milestone" && item !== "period")) return
     project.dragLabel(item, label, data.id, event.delta, data.intervalId)
   }
 

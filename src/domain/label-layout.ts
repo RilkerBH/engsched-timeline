@@ -33,6 +33,13 @@ export const LABEL_LAYOUT = {
     /** Distance between the top of the triangle and the bottom of the name (sits above the date). */
     nameAboveMarker: 20,
   },
+  period: {
+    /** Default legend position: inset from the band's own bottom-left corner, so it always starts inside the visible band regardless of content height. */
+    insetX: 6,
+    insetY: 6,
+    /** Border width (px) used by both the band and its legend when borderStyle isn't "none". */
+    borderWidth: 2,
+  },
 } as const;
 
 export interface LabelOffsets {

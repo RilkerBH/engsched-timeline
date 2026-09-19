@@ -63,7 +63,7 @@ describe("periods (added in app v2.1.0)", () => {
 
   it("round-trips periods", () => {
     const store = memoryStore();
-    const state = { ...INITIAL_PROJECT_STATE, periods: [{ id: "r", name: "Chuvas", startDate: "2026-01-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25 }] };
+    const state = { ...INITIAL_PROJECT_STATE, periods: [{ id: "r", name: "Chuvas", startDate: "2026-01-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25, borderStyle: "none" as const, borderColor: "#5B9BD5", labelOffsetX: 0, labelOffsetY: 0 }] };
     persistState(store, state);
     expect(loadPersistedState(store).periods).toEqual(state.periods);
   });

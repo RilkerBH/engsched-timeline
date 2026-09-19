@@ -29,7 +29,7 @@ export const INITIAL_PROJECT_STATE: ProjectState = {
 };
 
 export type LabelKind = "name" | "date";
-export type ItemKind = "task" | "milestone";
+export type ItemKind = "task" | "milestone" | "period";
 
 export type ProjectAction =
   | { type: "project/configured"; settings: Omit<ProjectSettings, "id">; id: string }
@@ -58,6 +58,11 @@ function dragLabel<T extends LabelOffsets>(item: T, label: LabelKind, delta: { x
     return { ...item, labelOffsetX: (item.labelOffsetX || 0) + delta.x, labelOffsetY: (item.labelOffsetY || 0) + delta.y };
   }
   return { ...item, dateLabelOffsetX: (item.dateLabelOffsetX || 0) + delta.x, dateLabelOffsetY: (item.dateLabelOffsetY || 0) + delta.y };
+}
+
+/** Periods only have a single draggable legend (no separate date label). */
+function dragPeriodLabel(period: PeriodData, delta: { x: number; y: number }): PeriodData {
+  return { ...period, labelOffsetX: (period.labelOffsetX || 0) + delta.x, labelOffsetY: (period.labelOffsetY || 0) + delta.y };
 }
 
 export function projectReducer(state: ProjectState, action: ProjectAction): ProjectState {
@@ -121,6 +126,9 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
             return dragLabel(p, action.label, action.delta);
           }),
         };
+      }
+      if (action.item === "period") {
+        return { ...state, periods: state.periods.map(p => (p.id === action.id ? dragPeriodLabel(p, action.delta) : p)) };
       }
       return { ...state, milestones: state.milestones.map(m => (m.id === action.id ? dragLabel(m, action.label, action.delta) : m)) };
 

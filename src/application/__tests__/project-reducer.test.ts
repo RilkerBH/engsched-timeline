@@ -12,7 +12,8 @@ const ms = (id: string, extra: Partial<MilestoneData> = {}): MilestoneData => ({
   labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0, ...extra,
 });
 const period = (id: string, extra: Partial<PeriodData> = {}): PeriodData => ({
-  id, name: id, startDate: "2026-02-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25, ...extra,
+  id, name: id, startDate: "2026-02-01", endDate: "2026-03-31", color: "#5B9BD5", opacity: 25,
+  borderStyle: "none", borderColor: "#5B9BD5", labelOffsetX: 0, labelOffsetY: 0, ...extra,
 });
 const base: ProjectState = { settings, tasks: [task("a", 0), task("b", 1)], milestones: [ms("m")], periods: [period("r")] };
 
@@ -67,6 +68,12 @@ describe("labels", () => {
     expect(s1.tasks[0]).toMatchObject({ labelOffsetX: 3, labelOffsetY: -2, dateLabelOffsetX: 0 });
     const s2 = projectReducer(s1, { type: "label/dragged", item: "milestone", label: "date", id: "m", delta: { x: 1, y: 1 } });
     expect(s2.milestones[0]).toMatchObject({ dateLabelOffsetX: 1, dateLabelOffsetY: 1, labelOffsetX: 0 });
+  });
+
+  it("drags a period's standalone legend", () => {
+    const s = projectReducer(base, { type: "label/dragged", item: "period", label: "name", id: "r", delta: { x: 4, y: 6 } });
+    expect(s.periods[0]).toMatchObject({ labelOffsetX: 4, labelOffsetY: 6 });
+    expect(s.tasks).toBe(base.tasks);
   });
 
   it("resets offsets of the selected items only", () => {

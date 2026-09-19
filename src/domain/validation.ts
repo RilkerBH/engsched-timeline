@@ -9,6 +9,7 @@ export const TASK_HEIGHT = { min: 16, max: 80 } as const;
 export const MILESTONE_HEIGHT = { min: 20, max: 60 } as const;
 export const PERIOD_OPACITY = { min: 5, max: 80 } as const;
 export const DATE_FORMATS = ["dd/MM/yyyy", "MMM/yy"] as const;
+export const PERIOD_BORDER_STYLES = ["none", "solid", "dashed", "dotted"] as const;
 
 export const MESSAGES = {
   nameRequired: "O nome é obrigatório",
@@ -118,6 +119,8 @@ export function periodSchema(project: DateRange) {
     endDate: z.string().min(1, MESSAGES.endRequired),
     color: z.string().refine(isValidHex, MESSAGES.invalidColor),
     opacity: z.number().min(PERIOD_OPACITY.min).max(PERIOD_OPACITY.max),
+    borderStyle: z.enum(PERIOD_BORDER_STYLES),
+    borderColor: z.string().refine(isValidHex, MESSAGES.invalidColor),
   }).superRefine((data, ctx) => {
     if (data.startDate > data.endDate) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endOnOrAfterStart, path: ["endDate"] });

@@ -67,6 +67,11 @@ export interface PeriodData {
   endDate: string;      // YYYY-MM-DD (UTC), inclusive
   color: string;        // #RRGGBB
   opacity: number;      // 5‒80 (%)
+  borderStyle: 'none' | 'solid' | 'dashed' | 'dotted';
+  borderColor: string;  // #RRGGBB
+  /** Drag offset (px) of the standalone name legend, relative to its default position. */
+  labelOffsetX: number;
+  labelOffsetY: number;
 }
 
 export interface ProjectFile {

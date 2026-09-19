@@ -11,8 +11,11 @@ import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-l
  * 1.5 - each interval gained its own "name" and label offsets (independent per
  *       interval); older intervals fall back to the task's name and zero
  *       offsets (app v2.3.0)
+ * 1.6 - periods gained a standalone, draggable name legend (labelOffsetX/Y)
+ *       and a customizable border (borderStyle/borderColor); absent on
+ *       older periods, defaulted to no drag offset and no border (app v2.4.0)
  */
-export const PROJECT_FILE_VERSION = "1.5";
+export const PROJECT_FILE_VERSION = "1.6";
 const LEGACY_TASKS_KEY = "servicePackages";
 export const PROJECT_FILE_EXTENSION = ".engsched";
 
@@ -104,6 +107,18 @@ function migrateTaskIntervals(task: TaskData): TaskData {
   };
 }
 
+/** Backfills the legend drag offsets and border style/color on periods saved before format 1.6. */
+function migratePeriodDefaults(period: PeriodData): PeriodData {
+  const legacy = period as Partial<PeriodData>;
+  return {
+    ...period,
+    labelOffsetX: legacy.labelOffsetX ?? 0,
+    labelOffsetY: legacy.labelOffsetY ?? 0,
+    borderStyle: legacy.borderStyle ?? "none",
+    borderColor: legacy.borderColor ?? period.color,
+  };
+}
+
 /**
  * Converts a legacy file to the current format version.
  * Files already at the current version are returned unchanged.
@@ -119,8 +134,10 @@ export function migrateProjectFile(file: ProjectFile): ProjectFile {
   // 1.1 -> 1.2 only renamed the key, which deserializeProject already normalizes
   // 1.2 -> 1.3 only added "periods", defaulted to [] by deserializeProject
   // 1.3 -> 1.4 only added "intervals", absent (undefined) on older tasks
+  // 1.5 -> 1.6 added labelOffsetX/Y and borderStyle/borderColor on periods, absent on older ones
   tasks = tasks.map(migrateTaskIntervals);
-  return { ...file, version: PROJECT_FILE_VERSION, tasks, milestones, periods: file.periods ?? [] };
+  const periods = (file.periods ?? []).map(migratePeriodDefaults);
+  return { ...file, version: PROJECT_FILE_VERSION, tasks, milestones, periods };
 }
 
 /**
