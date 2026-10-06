@@ -171,3 +171,25 @@ describe("periods", () => {
     expect(projectReducer(base, { type: "items/patched", ids, patch: { color: "#000000" } }).periods).toBe(base.periods);
   });
 });
+
+describe("task label side", () => {
+  it("resets drag offsets (task and intervals) only on tasks that switch sides", () => {
+    const iv = { id: "i1", name: "x", startDate: "2026-03-01", endDate: "2026-03-10", labelOffsetX: 4, labelOffsetY: 4, dateLabelOffsetX: 4, dateLabelOffsetY: 4 };
+    const state: ProjectState = {
+      ...base,
+      tasks: [
+        task("a", 0, { labelOffsetX: 10, intervals: [iv, { ...iv, id: "i2", startDate: "2026-03-20", endDate: "2026-03-31" }] }),
+        task("b", 1, { labelSide: "left", labelOffsetX: 7 }),
+      ],
+    };
+    const next = projectReducer(state, { type: "items/patched", ids: { tasks: ["a", "b"], milestones: ["m"] }, patch: { labelSide: "left" } });
+    const [a, b] = next.tasks;
+    expect(a.labelSide).toBe("left");
+    expect(a.labelOffsetX).toBe(0);
+    expect(a.intervals?.every(i => i.labelOffsetX === 0 && i.dateLabelOffsetY === 0)).toBe(true);
+    // Already on the left: keeps its manual adjustment
+    expect(b.labelOffsetX).toBe(7);
+    // Milestones have no label side
+    expect(next.milestones[0]).not.toHaveProperty("labelSide");
+  });
+});

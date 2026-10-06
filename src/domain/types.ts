@@ -3,6 +3,8 @@ export interface ProjectSettings {
   title: string;
   startDate: string;   // YYYY-MM-DD (UTC)
   endDate: string;     // YYYY-MM-DD (UTC)
+  /** Height (px) of the milestone strip between the month bar and the tasks. Absent = default. */
+  milestoneStripHeight?: number;
 }
 
 export interface TaskInterval {
@@ -40,14 +42,26 @@ export interface TaskData {
   dateLabelOffsetY: number;
   preventNameLineBreak?: boolean;
   dateFormat?: 'dd/MM/yyyy' | 'MMM/yy';
+  /** Side of the bar the name/date sit on when the name is outside the bar. Absent = "right". */
+  labelSide?: TaskLabelSide;
 }
+
+export type TaskLabelSide = 'right' | 'left';
+
+export type MilestoneShape = 'triangle' | 'triangle-down' | 'flag' | 'diamond' | 'circle' | 'square' | 'star';
 
 export interface MilestoneData {
   id: string;
   name: string;
   date: string;        // YYYY-MM-DD (UTC)
   color: string;
-  height: number;      // 20‒60 px
+  height: number;      // 20‒60 px (size of the shape)
+  /** Shape of the marker. Absent = "triangle". */
+  shape?: MilestoneShape;
+  /** Length (px) of the vertical line between the timeline axis and the shape. Absent = 0 (no line). */
+  stemHeight?: number;
+  /** Color of the vertical line. Absent = the milestone's own color. */
+  stemColor?: string;
   labelOffsetX: number; // px
   labelOffsetY: number; // px
   dateLabelOffsetX: number;

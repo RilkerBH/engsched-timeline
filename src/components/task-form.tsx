@@ -27,7 +27,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { TaskData } from "@/domain/types"
 import { useEffect } from "react"
-import { Plus, RotateCcw, Trash2 } from "lucide-react"
+import { AlignLeft, AlignRight, Plus, RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
 import { DEFAULT_COLOR } from "@/domain/colors"
 import { TASK_HEIGHT, taskSchema } from "@/domain/validation"
@@ -82,6 +82,7 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
     color: DEFAULT_COLOR,
     height: 32,
     showTextInside: false,
+    labelSide: 'right' as const,
     ...ZERO_OFFSETS,
     preventNameLineBreak: false,
     dateFormat: 'dd/MM/yyyy' as const,
@@ -96,8 +97,11 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
       endDate: primary.endDate,
       extraIntervals,
       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
+      labelSide: defaultValues?.labelSide || 'right',
     }
   })
+
+  const showTextInside = form.watch("showTextInside");
 
   const { fields, append, remove, replace } = useFieldArray({ control: form.control, name: "extraIntervals", keyName: "rowKey" });
 
@@ -110,14 +114,17 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
       endDate: primary.endDate,
       extraIntervals,
       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
+      labelSide: defaultValues?.labelSide || 'right',
     });
     replace(extraIntervals);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValues, form, projectSettings.startDate, projectSettings.endDate]);
 
 
-  const handleSubmit = (data: z.infer<typeof dynamicSchema>, resetOffsets = false) => {
+  const handleSubmit = (data: z.infer<typeof dynamicSchema>, resetRequested = false) => {
     const { extraIntervals: extras, ...taskFields } = data;
+    // Drag offsets are relative to the chosen side, so switching sides starts from the new side's default position
+    const resetOffsets = resetRequested || (!!defaultValues && (defaultValues.labelSide ?? 'right') !== (data.labelSide ?? 'right'));
 
     // Each range (primary + extras) keeps its own label offsets, set only by
     // dragging on the canvas — never part of the form fields themselves.
@@ -367,7 +374,35 @@ export function TaskForm({ isOpen, onClose, onSubmit, onDelete, projectSettings,
                   </FormItem>
                 )}
               />
-              
+            {!showTextInside && (
+              <FormField
+                control={form.control}
+                name="labelSide"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <FormLabel>Posição do texto</FormLabel>
+                    <div className="flex rounded-md border p-0.5" role="radiogroup" aria-label="Posição do texto">
+                      {([['left', 'Esquerda', AlignLeft], ['right', 'Direita', AlignRight]] as const).map(([value, label, Icon]) => (
+                        <Button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={(field.value ?? 'right') === value}
+                          variant={(field.value ?? 'right') === value ? 'default' : 'ghost'}
+                          size="sm"
+                          className="h-7"
+                          onClick={() => field.onChange(value)}
+                        >
+                          <Icon className="mr-1 h-4 w-4" />
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
+
             <DialogFooter className="sm:justify-between pt-4 border-t">
               <div className="flex items-center gap-2">
                 {defaultValues && onDelete && (

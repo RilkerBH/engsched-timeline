@@ -146,3 +146,22 @@ describe("periodSchema", () => {
     expect(firstMessage(schema.safeParse({ ...valid, color: "blue" }))).toEqual(["color", MESSAGES.invalidColor]);
   });
 });
+
+describe("milestone design and strip height", () => {
+  const valid = { name: "M", date: "2026-06-01", color: "#000000", height: 30 };
+
+  it("accepts shapes, stem height and an empty stem color (= milestone color)", () => {
+    const schema = milestoneSchema(project);
+    expect(schema.safeParse({ ...valid, shape: "flag", stemHeight: 120, stemColor: "" }).success).toBe(true);
+    expect(schema.safeParse({ ...valid, shape: "hexagon" }).success).toBe(false);
+    expect(schema.safeParse({ ...valid, stemHeight: -1 }).success).toBe(false);
+    expect(schema.safeParse({ ...valid, stemColor: "blue" }).success).toBe(false);
+  });
+
+  it("bounds the milestone strip height", () => {
+    const base = { title: "T", startDate: "2026-01-01", endDate: "2026-12-31" };
+    expect(projectSettingsSchema.safeParse(base).success).toBe(true);
+    expect(projectSettingsSchema.safeParse({ ...base, milestoneStripHeight: 200 }).success).toBe(true);
+    expect(projectSettingsSchema.safeParse({ ...base, milestoneStripHeight: 10 }).success).toBe(false);
+  });
+});

@@ -65,6 +65,15 @@ function dragPeriodLabel(period: PeriodData, delta: { x: number; y: number }): P
   return { ...period, labelOffsetX: (period.labelOffsetX || 0) + delta.x, labelOffsetY: (period.labelOffsetY || 0) + delta.y };
 }
 
+/** Zeroes the label offsets of a task and of each of its intervals. */
+function resetTaskLabels(task: TaskData): TaskData {
+  return {
+    ...task,
+    ...ZERO_OFFSETS,
+    ...(task.intervals ? { intervals: task.intervals.map(iv => ({ ...iv, ...ZERO_OFFSETS })) } : {}),
+  };
+}
+
 export function projectReducer(state: ProjectState, action: ProjectAction): ProjectState {
   switch (action.type) {
     case "project/configured":
@@ -133,11 +142,18 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
       return { ...state, milestones: state.milestones.map(m => (m.id === action.id ? dragLabel(m, action.label, action.delta) : m)) };
 
     case "items/patched": {
-      // showTextInside only exists on tasks; the other fields are shared
-      const { showTextInside, height, ...shared } = action.patch;
+      // showTextInside and labelSide only exist on tasks; the other fields are shared
+      const { showTextInside, height, labelSide, ...shared } = action.patch;
+      // Drag offsets are relative to the side's anchor, so a task switching
+      // sides goes back to the default position of the new side.
+      const switchingSide = new Set(labelSide === undefined ? [] : state.tasks
+        .filter(t => action.ids.tasks.includes(t.id) && (t.labelSide ?? "right") !== labelSide)
+        .map(t => t.id));
       return {
         ...state,
-        tasks: applyPatch<TaskData>(state.tasks, action.ids.tasks, action.patch),
+        tasks: applyPatch<TaskData>(state.tasks, action.ids.tasks, action.patch).map(t =>
+          switchingSide.has(t.id) ? resetTaskLabels(t) : t
+        ),
         milestones: applyPatch<MilestoneData>(state.milestones, action.ids.milestones, shared),
       };
     }
@@ -146,11 +162,7 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
       const resetIds = new Set(action.ids.tasks);
       return {
         ...state,
-        tasks: applyPatch(state.tasks, action.ids.tasks, { ...ZERO_OFFSETS }).map(t =>
-          resetIds.has(t.id) && t.intervals
-            ? { ...t, intervals: t.intervals.map(iv => ({ ...iv, ...ZERO_OFFSETS })) }
-            : t
-        ),
+        tasks: state.tasks.map(t => (resetIds.has(t.id) ? resetTaskLabels(t) : t)),
         milestones: applyPatch(state.milestones, action.ids.milestones, { ...ZERO_OFFSETS }),
       };
     }

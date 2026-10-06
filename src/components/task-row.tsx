@@ -1,6 +1,6 @@
 "use client"
 
-import type { TaskData } from "@/domain/types"
+import type { TaskData, TaskLabelSide } from "@/domain/types"
 import type { TaskBar } from "@/domain/layout"
 import { useDraggable } from "@dnd-kit/core"
 import { ArrowDown, ArrowUp } from "lucide-react"
@@ -45,6 +45,7 @@ export function TaskRow({ task, onDoubleClick, onOrderChange, selected = false, 
               bar={bar}
               color={task.color}
               showTextInside={task.showTextInside}
+              labelSide={task.labelSide ?? 'right'}
               preventNameLineBreak={task.preventNameLineBreak}
               dateFormat={task.dateFormat}
               selected={selected}
@@ -71,6 +72,7 @@ type TaskBarSegmentProps = {
   bar: TaskBar
   color: string
   showTextInside: boolean
+  labelSide: TaskLabelSide
   preventNameLineBreak?: boolean
   dateFormat?: 'dd/MM/yyyy' | 'MMM/yy'
   selected: boolean
@@ -82,7 +84,7 @@ type TaskBarSegmentProps = {
  * independently draggable name/date labels, anchored to this bar's own
  * position inside the row (not the task's overall bounding box).
  */
-function TaskBarSegment({ taskId, bar, color, showTextInside, preventNameLineBreak, dateFormat, selected, onDoubleClick }: TaskBarSegmentProps) {
+function TaskBarSegment({ taskId, bar, color, showTextInside, labelSide, preventNameLineBreak, dateFormat, selected, onDoubleClick }: TaskBarSegmentProps) {
   const suffix = bar.intervalId ?? 'primary';
   const nameDraggable = useDraggable({
     id: `name-task-${taskId}-${suffix}`,
@@ -144,6 +146,19 @@ function TaskBarSegment({ taskId, bar, color, showTextInside, preventNameLineBre
     dateLabelStyle.left = `calc(${barCenter}% + ${dOffX}px)`;
     dateLabelStyle.transform = `translateX(-50%) ${dateDndTransform}`;
     dateLabelStyle.textAlign = 'center';
+  } else if (labelSide === 'left') {
+    const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.task.outside;
+    // Mirror of the default: name and date end just before the start of this bar, right-aligned
+    nameLabelStyle.top = `50%`;
+    nameLabelStyle.right = `calc(${100 - bar.left}% + ${gapX - offX}px)`;
+    nameLabelStyle.transform = `translateY(calc(-100% + ${offY - nameAboveCenter}px)) ${nameDndTransform}`;
+    nameLabelStyle.textAlign = 'right';
+    nameLabelStyle.width = 'max-content';
+
+    dateLabelStyle.top = `50%`;
+    dateLabelStyle.right = `calc(${100 - bar.left}% + ${gapX - dOffX}px)`;
+    dateLabelStyle.transform = `translateY(${dateBelowCenter + dOffY}px) ${dateDndTransform}`;
+    dateLabelStyle.textAlign = 'right';
   } else {
     const { gapX, nameAboveCenter, dateBelowCenter } = LABEL_LAYOUT.task.outside;
     // Name to the right of this bar, text baseline just above the vertical center

@@ -6,6 +6,7 @@ import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useDraggable } from "@dnd-kit/core"
 import { LABEL_LAYOUT } from "@/domain/label-layout"
+import { type MilestoneShapeGeometry, getMilestoneShapeGeometry } from "@/domain/milestone-shape"
 
 type MilestoneMarkerProps = {
   milestone: MilestoneData & { position: number };
@@ -37,13 +38,19 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
   const formattedDate = format(parseISO(milestone.date), displayFormat, { locale: ptBR });
   const tooltipDate = format(parseISO(milestone.date), 'dd/MM/yyyy', { locale: ptBR });
 
-  const { nameAboveMarker, dateAboveMarker } = LABEL_LAYOUT.milestone;
+  const { nameAboveMarker, dateAboveMarker, stemWidth } = LABEL_LAYOUT.milestone;
+  const shape = getMilestoneShapeGeometry(milestone.shape, milestone.height);
+  const stemHeight = Math.max(0, milestone.stemHeight ?? 0);
+  const stemColor = milestone.stemColor || milestone.color;
+  const shapeStroke = selected
+    ? { stroke: 'hsl(var(--primary))', strokeWidth: 3, strokeLinejoin: 'round' as const }
+    : { stroke: 'none', strokeWidth: 0 };
 
   const nameDndTransform = nameDraggable.transform ? ` translate3d(${nameDraggable.transform.x}px, ${nameDraggable.transform.y}px, 0)` : '';
   const nameLabelStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: `calc(100% + ${nameAboveMarker}px)`,
-    left: `50%`,
+    left: 0,
     transform: `translate(calc(-50% + ${milestone.labelOffsetX || 0}px), ${milestone.labelOffsetY || 0}px) ${nameDndTransform}`,
     whiteSpace: milestone.preventNameLineBreak ? 'nowrap' : 'pre-wrap',
     minWidth: '100px',
@@ -55,7 +62,7 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
   const dateLabelStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: `calc(100% + ${dateAboveMarker}px)`,
-    left: `50%`,
+    left: 0,
     transform: `translate(calc(-50% + ${milestone.dateLabelOffsetX || 0}px), ${milestone.dateLabelOffsetY || 0}px) ${dateDndTransform}`,
     whiteSpace: 'nowrap',
     zIndex: dateDraggable.transform ? 1000 : undefined,
@@ -67,26 +74,28 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div 
-            className="absolute bottom-0 transition-all duration-150 hover:scale-110 z-30"
-            style={{ left: `calc(${milestone.position}% - ${(milestone.height * 0.866) / 2}px)` }}
+          {/* Zero-width box standing on the axis at the milestone's date: stem below, shape on top, labels above */}
+          <div
+            className="absolute bottom-0 z-30"
+            style={{ left: `${milestone.position}%`, width: 0, height: `${stemHeight + shape.height}px` }}
             onDoubleClick={onDoubleClick}
             data-keep-selection
           >
-            <svg 
-              width={milestone.height * 0.866} 
-              height={milestone.height} 
-              viewBox={`0 0 ${milestone.height * 0.866} ${milestone.height}`}
-              style={{ display: 'block', overflow: 'visible', cursor: 'pointer' }}
+            {stemHeight > 0 && (
+              <div
+                className="absolute bottom-0"
+                style={{ left: -stemWidth / 2, width: stemWidth, height: stemHeight, backgroundColor: stemColor }}
+              />
+            )}
+            <svg
+              className="absolute top-0 transition-transform duration-150 hover:scale-110"
+              width={shape.width}
+              height={shape.height}
+              viewBox={`0 0 ${shape.width} ${shape.height}`}
+              style={{ left: -shape.anchorX, overflow: 'visible', cursor: 'pointer', transformOrigin: `${shape.anchorX}px 100%` }}
               onClick={(e) => onSelect?.(e)}
             >
-              <polygon 
-                points={`${(milestone.height * 0.866) / 2},0 0,${milestone.height} ${milestone.height * 0.866},${milestone.height}`}
-                fill={milestone.color}
-                stroke={selected ? 'hsl(var(--primary))' : 'none'}
-                strokeWidth={selected ? 3 : 0}
-                strokeLinejoin="round"
-              />
+              <MilestoneShapeElement geometry={shape} fill={milestone.color} {...shapeStroke} />
             </svg>
             <div 
               ref={nameDraggable.setNodeRef}
@@ -115,4 +124,13 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
       </Tooltip>
     </TooltipProvider>
   )
+}
+
+/** The SVG element of a milestone shape (polygon, circle or rect), drawn in the geometry's own box. */
+export function MilestoneShapeElement({ geometry, ...paint }: { geometry: MilestoneShapeGeometry } & React.SVGProps<SVGElement>) {
+  const el = geometry.element
+  const props = paint as React.SVGProps<any>
+  if (el.tag === 'circle') return <circle cx={el.cx} cy={el.cy} r={el.r} {...props} />
+  if (el.tag === 'rect') return <rect x={el.x} y={el.y} width={el.width} height={el.height} rx={el.rx} {...props} />
+  return <polygon points={el.points} {...props} />
 }

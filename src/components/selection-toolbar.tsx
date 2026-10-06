@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ColorPicker } from "@/components/color-picker"
 import type { Selection } from "@/domain/bulk"
+import type { TaskLabelSide } from "@/domain/types"
 
 type DateFormat = "dd/MM/yyyy" | "MMM/yy"
 
@@ -29,6 +30,7 @@ type SelectionToolbarProps = {
   onMove: (direction: "up" | "down") => void
   onShiftDates: (days: number) => void
   onShowTextInside: (value: boolean) => void
+  onLabelSide: (side: TaskLabelSide) => void
   onPreventLineBreak: (value: boolean) => void
   onResetLabels: () => void
   onDelete: () => void
@@ -37,7 +39,7 @@ type SelectionToolbarProps = {
 export function SelectionToolbar({
   selection, totalTasks, totalMilestones,
   onClear, onSelectAll, onColor, onDateFormat, onMove, onShiftDates,
-  onShowTextInside, onPreventLineBreak, onResetLabels, onDelete,
+  onShowTextInside, onLabelSide, onPreventLineBreak, onResetLabels, onDelete,
 }: SelectionToolbarProps) {
   const [shiftDays, setShiftDays] = useState("7")
   const nTasks = selection.tasks.length
@@ -57,7 +59,9 @@ export function SelectionToolbar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border border-primary/40 bg-primary/5 px-4 py-2 text-sm">
+    // Pinned to the bottom of the viewport so it stays reachable wherever the timeline is scrolled
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-primary/40 bg-background shadow-[0_-4px_12px_rgba(0,0,0,0.08)]" data-keep-selection>
+    <div className="flex flex-wrap items-center gap-3 bg-primary/5 px-4 py-2 text-sm md:px-8">
       <div className="flex items-center gap-2 font-medium">
         <CheckSquare className="h-4 w-4 text-primary" />
         <span>{summary} selecionad{nMs > 0 ? "o" : "a"}{nTasks + nMs > 1 ? "s" : ""}</span>
@@ -131,6 +135,10 @@ export function SelectionToolbar({
               <DropdownMenuLabel>Nome dentro da barra</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => onShowTextInside(true)}>Ativar</DropdownMenuItem>
               <DropdownMenuItem onClick={() => onShowTextInside(false)}>Desativar</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Posição do texto (fora da barra)</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => onLabelSide("left")}>Esquerda</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onLabelSide("right")}>Direita</DropdownMenuItem>
             </>
           )}
           <DropdownMenuSeparator />
@@ -153,6 +161,7 @@ export function SelectionToolbar({
           <X className="h-4 w-4" />
         </Button>
       </div>
+    </div>
     </div>
   )
 }

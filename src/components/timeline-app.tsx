@@ -7,6 +7,7 @@ import { format } from "date-fns"
 
 import type { ProjectSettings, TaskData, MilestoneData, PeriodData } from "@/domain/types"
 import { selectionSize } from "@/domain/bulk"
+import { MILESTONE_STRIP_HEIGHT } from "@/domain/validation"
 import { getPositionAndWidth, layoutTaskRows } from "@/domain/layout"
 import { useProject } from "@/application/use-project"
 import { getProjectStorage } from "@/infrastructure/project-storage"
@@ -24,10 +25,9 @@ import { PeriodBand } from "./period-band"
 import { SelectionToolbar } from "./selection-toolbar"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog"
 import { Skeleton } from "./ui/skeleton"
+import { cn } from "@/lib/utils"
 
 const ROW_GAP = 20
-/** Height of the milestone strip in TimelineHeader (Tailwind h-20). Bands extend up through it. */
-const MILESTONE_STRIP_HEIGHT = 80
 const projectStorage = getProjectStorage()
 
 export default function TimelineApp() {
@@ -45,6 +45,8 @@ export default function TimelineApp() {
   const [isMilestoneFormOpen, setIsMilestoneFormOpen] = useState(false)
   const [editingPeriod, setEditingPeriod] = useState<PeriodData | undefined>(undefined)
   const [isPeriodFormOpen, setIsPeriodFormOpen] = useState(false)
+  /** Live strip height while its edge is being dragged; null otherwise. */
+  const [draggedStripHeight, setDraggedStripHeight] = useState<number | null>(null)
 
   const exportableAreaRef = useRef<HTMLDivElement>(null)
   const rowsRef = useRef<HTMLDivElement>(null)
@@ -161,6 +163,18 @@ export default function TimelineApp() {
     toast({ title: "Período Excluído", variant: "destructive" })
   }
 
+  /** Height of the milestone strip in TimelineHeader. Period bands extend up through it. */
+  const stripHeight = draggedStripHeight ?? settings?.milestoneStripHeight ?? MILESTONE_STRIP_HEIGHT.default
+
+  const handleStripHeightChange = (height: number, commit: boolean) => {
+    if (!commit) {
+      setDraggedStripHeight(height)
+      return
+    }
+    setDraggedStripHeight(null)
+    if (settings && height !== settings.milestoneStripHeight) project.configureProject({ ...settings, milestoneStripHeight: height })
+  }
+
   const periodBands = useMemo(
     () => settings ? periods.map(p => ({ ...p, ...getPositionAndWidth(p.startDate, p.endDate, settings.startDate, settings.endDate) })) : [],
     [periods, settings]
@@ -176,7 +190,7 @@ export default function TimelineApp() {
     const rows = rowsRef.current
     if (!rows || periodBands.length === 0) return
     const rect = rows.getBoundingClientRect()
-    if (e.clientY < rect.top - MILESTONE_STRIP_HEIGHT || e.clientY > rect.bottom) return
+    if (e.clientY < rect.top - stripHeight || e.clientY > rect.bottom) return
     const xPct = ((e.clientX - rect.left) / rect.width) * 100
     // Last match wins: it is the one drawn on top
     const hit = [...periodBands].reverse().find(p => xPct >= p.left && xPct <= p.left + p.width)
@@ -253,7 +267,7 @@ export default function TimelineApp() {
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className={cn("p-4 md:p-8", hasSelection && "pb-32 md:pb-32")}>
       <div ref={exportableAreaRef} className="w-full overflow-x-auto py-4 bg-white" onClick={handleBackgroundClick}>
         <div className="w-full">
           <DndContext onDragEnd={handleLabelDragEnd}>
@@ -271,13 +285,15 @@ export default function TimelineApp() {
                 }}
                 selectedMilestoneIds={selection.milestones}
                 onSelectMilestone={sel.selectMilestone}
+                stripHeight={stripHeight}
+                onStripHeightChange={handleStripHeightChange}
               />
               <div ref={rowsRef} className="relative" style={{ height: `${rowsHeight}px` }}>
                 {periodBands.map(period => (
                   <PeriodBand
                     key={period.id}
                     period={period}
-                    extendUp={MILESTONE_STRIP_HEIGHT}
+                    extendUp={stripHeight}
                     onDoubleClick={() => {
                       setEditingPeriod(period)
                       setIsPeriodFormOpen(true)
@@ -316,6 +332,7 @@ export default function TimelineApp() {
           onMove={(dir) => project.moveTasks(selection.tasks, dir)}
           onShiftDates={handleBulkShiftDates}
           onShowTextInside={(showTextInside) => project.patchItems(selection, { showTextInside })}
+          onLabelSide={(labelSide) => project.patchItems(selection, { labelSide })}
           onPreventLineBreak={(preventNameLineBreak) => project.patchItems(selection, { preventNameLineBreak })}
           onResetLabels={handleBulkResetLabels}
           onDelete={requestBulkDelete}

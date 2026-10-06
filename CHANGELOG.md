@@ -9,6 +9,34 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.5.0] - 2026-10-06
+
+### Adicionado
+
+- **Altura do espaço dos marcos ajustável**: arraste a borda inferior da faixa
+  dos marcos (aparece ao passar o mouse) ou use o controle em *Editar Projeto*
+  (60 a 480 px, padrão 80 px).
+- **Novos formatos de marco**: triângulo, triângulo invertido, bandeira,
+  losango, círculo, quadrado e estrela.
+- **Linha vertical do marco**: cada marco pode ter uma linha de altura
+  variável (0 a 400 px) ligando o eixo ao símbolo, com cor própria ou a
+  mesma cor do marco — permite escalonar marcos próximos sem sobrepor textos.
+- **Texto à esquerda ou à direita da barra**: no formulário da tarefa (e em
+  massa pelo menu *Mais* da barra de seleção) é possível escolher o lado do
+  nome e da data quando o nome fica fora da barra. Ao trocar de lado, os
+  textos voltam à posição padrão do novo lado; *Redefinir textos* continua
+  disponível após arrastá-los.
+
+### Alterado
+
+- A barra de ações da seleção agora fica fixa no rodapé da tela, visível em
+  qualquer ponto da rolagem do cronograma.
+- O controle "Altura" do marco passou a se chamar "Tamanho do símbolo".
+- Formato do arquivo `.engsched` sobe para 1.7: marcos ganham `shape`,
+  `stemHeight` e `stemColor`; tarefas ganham `labelSide`; o projeto ganha
+  `milestoneStripHeight`. Todos opcionais — arquivos 1.6 abrem com a
+  aparência de antes.
+
 ## [2.4.0] - 2026-09-19
 
 ### Adicionado

@@ -12,9 +12,9 @@ import type { MilestoneData, TaskData } from "./types";
  */
 export const LABEL_LAYOUT = {
   task: {
-    /** "Name outside" mode: name and date to the right of the bar, stacked around its vertical center. */
+    /** "Name outside" mode: name and date beside the bar (right by default, or left), stacked around its vertical center. */
     outside: {
-      /** Horizontal distance between the end of the bar and the start of the text. */
+      /** Horizontal distance between the bar's edge and the text. */
       gapX: 8,
       /** Distance between the bar's vertical center and the baseline of the name (above). */
       nameAboveCenter: 1,
@@ -32,6 +32,8 @@ export const LABEL_LAYOUT = {
     dateAboveMarker: 2,
     /** Distance between the top of the triangle and the bottom of the name (sits above the date). */
     nameAboveMarker: 20,
+    /** Width (px) of the vertical line (stem) between the axis and the shape. */
+    stemWidth: 2,
   },
   period: {
     /** Default legend position: inset from the band's own bottom-left corner, so it always starts inside the visible band regardless of content height. */

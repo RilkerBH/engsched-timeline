@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import type { ProjectSettings } from "@/domain/types"
-import { type ProjectSettingsInput, projectSettingsSchema } from "@/domain/validation"
+import { Slider } from "@/components/ui/slider"
+import { MILESTONE_STRIP_HEIGHT, type ProjectSettingsInput, projectSettingsSchema } from "@/domain/validation"
 
 
 type ProjectSettingsDialogProps = {
@@ -103,6 +104,25 @@ export function ProjectSettingsDialog({ isOpen, onClose, onSubmit, defaultValues
                 )}
               />
             </div>
+            <FormField
+              control={form.control}
+              name="milestoneStripHeight"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Altura do espaço dos marcos ({field.value ?? MILESTONE_STRIP_HEIGHT.default}px)</FormLabel>
+                  <FormControl>
+                    <Slider
+                      value={[field.value ?? MILESTONE_STRIP_HEIGHT.default]}
+                      onValueChange={(value) => field.onChange(value[0])}
+                      min={MILESTONE_STRIP_HEIGHT.min}
+                      max={MILESTONE_STRIP_HEIGHT.max}
+                      step={4}
+                    />
+                  </FormControl>
+                  <p className="text-xs text-muted-foreground">Também ajustável arrastando a borda inferior da faixa dos marcos.</p>
+                </FormItem>
+              )}
+            />
             <DialogFooter>
                 <DialogClose asChild>
                     <Button type="button" variant="secondary">Cancelar</Button>

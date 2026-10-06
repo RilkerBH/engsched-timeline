@@ -70,7 +70,7 @@ export function moveTasksBlock(
 }
 
 export type BulkPatch = Partial<
-  Pick<TaskData, "color" | "dateFormat" | "showTextInside" | "preventNameLineBreak" | "height">
+  Pick<TaskData, "color" | "dateFormat" | "showTextInside" | "preventNameLineBreak" | "height" | "labelSide">
 >;
 
 export function applyPatch<T extends { id: string }>(items: T[], ids: string[], patch: Partial<T>): T[] {

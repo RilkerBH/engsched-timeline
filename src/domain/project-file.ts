@@ -14,8 +14,11 @@ import { migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "./label-l
  * 1.6 - periods gained a standalone, draggable name legend (labelOffsetX/Y)
  *       and a customizable border (borderStyle/borderColor); absent on
  *       older periods, defaulted to no drag offset and no border (app v2.4.0)
+ * 1.7 - milestones gained "shape", "stemHeight" and "stemColor"; tasks gained
+ *       "labelSide"; project settings gained "milestoneStripHeight". All are
+ *       optional and absent fields render exactly as before (app v2.5.0)
  */
-export const PROJECT_FILE_VERSION = "1.6";
+export const PROJECT_FILE_VERSION = "1.7";
 const LEGACY_TASKS_KEY = "servicePackages";
 export const PROJECT_FILE_EXTENSION = ".engsched";
 
@@ -135,6 +138,7 @@ export function migrateProjectFile(file: ProjectFile): ProjectFile {
   // 1.2 -> 1.3 only added "periods", defaulted to [] by deserializeProject
   // 1.3 -> 1.4 only added "intervals", absent (undefined) on older tasks
   // 1.5 -> 1.6 added labelOffsetX/Y and borderStyle/borderColor on periods, absent on older ones
+  // 1.6 -> 1.7 only added optional fields (milestone shape/stem, task labelSide, strip height)
   tasks = tasks.map(migrateTaskIntervals);
   const periods = (file.periods ?? []).map(migratePeriodDefaults);
   return { ...file, version: PROJECT_FILE_VERSION, tasks, milestones, periods };

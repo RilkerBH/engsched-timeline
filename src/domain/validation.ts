@@ -7,6 +7,10 @@ import { isValidHex } from "./colors";
 
 export const TASK_HEIGHT = { min: 16, max: 80 } as const;
 export const MILESTONE_HEIGHT = { min: 20, max: 60 } as const;
+export const MILESTONE_STEM_HEIGHT = { min: 0, max: 400 } as const;
+export const MILESTONE_STRIP_HEIGHT = { min: 60, max: 480, default: 80 } as const;
+export const MILESTONE_SHAPES = ["triangle", "triangle-down", "flag", "diamond", "circle", "square", "star"] as const;
+export const TASK_LABEL_SIDES = ["right", "left"] as const;
 export const PERIOD_OPACITY = { min: 5, max: 80 } as const;
 export const DATE_FORMATS = ["dd/MM/yyyy", "MMM/yy"] as const;
 export const PERIOD_BORDER_STYLES = ["none", "solid", "dashed", "dotted"] as const;
@@ -39,6 +43,7 @@ export const projectSettingsSchema = z.object({
   title: z.string().min(1, MESSAGES.titleRequired),
   startDate: z.string().min(1, MESSAGES.startRequired),
   endDate: z.string().min(1, MESSAGES.endRequired),
+  milestoneStripHeight: z.number().min(MILESTONE_STRIP_HEIGHT.min).max(MILESTONE_STRIP_HEIGHT.max).optional(),
 }).refine(data => data.startDate < data.endDate, {
   message: MESSAGES.endAfterStart,
   path: ["endDate"],
@@ -60,6 +65,7 @@ export function taskSchema(project: DateRange) {
     color: z.string().refine(isValidHex, MESSAGES.invalidColor),
     height: z.number().min(TASK_HEIGHT.min).max(TASK_HEIGHT.max),
     showTextInside: z.boolean(),
+    labelSide: z.enum(TASK_LABEL_SIDES).optional(),
     preventNameLineBreak: z.boolean().optional(),
     dateFormat: z.enum(DATE_FORMATS).optional(),
   }).superRefine((data, ctx) => {
@@ -102,6 +108,10 @@ export function milestoneSchema(project: DateRange) {
     date: z.string(),
     color: z.string().refine(isValidHex, MESSAGES.invalidColor),
     height: z.number().min(MILESTONE_HEIGHT.min).max(MILESTONE_HEIGHT.max),
+    shape: z.enum(MILESTONE_SHAPES).optional(),
+    stemHeight: z.number().min(MILESTONE_STEM_HEIGHT.min).max(MILESTONE_STEM_HEIGHT.max).optional(),
+    /** Empty = same color as the milestone. */
+    stemColor: z.string().refine(v => v === "" || isValidHex(v), MESSAGES.invalidColor).optional(),
     preventNameLineBreak: z.boolean().optional(),
     dateFormat: z.enum(DATE_FORMATS).optional(),
   }).refine(data => isWithinRange(data.date, project), {

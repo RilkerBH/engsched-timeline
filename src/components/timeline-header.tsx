@@ -1,6 +1,8 @@
 "use client"
 
+import { useRef, useState } from "react"
 import type { ProjectSettings, MilestoneData } from "@/domain/types"
+import { MILESTONE_STRIP_HEIGHT } from "@/domain/validation"
 import { getMonthHeaders, getMilestonePosition } from "@/domain/layout"
 import { MilestoneMarker } from "./milestone-marker"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
@@ -11,9 +13,18 @@ type TimelineHeaderProps = {
   handleEditMilestone: (milestone: MilestoneData) => void;
   selectedMilestoneIds?: string[];
   onSelectMilestone?: (id: string, event: React.MouseEvent) => void;
+  /** Height (px) of the milestone strip. */
+  stripHeight: number;
+  /** Called while dragging the strip's bottom edge (live preview) and once more when the drag ends (commit = true). */
+  onStripHeightChange?: (height: number, commit: boolean) => void;
 }
 
-export function TimelineHeader({ projectSettings, milestones, handleEditMilestone, selectedMilestoneIds = [], onSelectMilestone }: TimelineHeaderProps) {
+const clampStrip = (h: number) => Math.round(Math.min(MILESTONE_STRIP_HEIGHT.max, Math.max(MILESTONE_STRIP_HEIGHT.min, h)))
+
+export function TimelineHeader({ projectSettings, milestones, handleEditMilestone, selectedMilestoneIds = [], onSelectMilestone, stripHeight, onStripHeightChange }: TimelineHeaderProps) {
+  const resizeStart = useRef<{ y: number; height: number } | null>(null)
+  const [resizing, setResizing] = useState(false)
+
   const monthHeaders = getMonthHeaders(projectSettings.startDate, projectSettings.endDate)
   const milestonesWithPositions = milestones.map(m => ({
     ...m,
@@ -43,7 +54,7 @@ export function TimelineHeader({ projectSettings, milestones, handleEditMileston
           </TooltipProvider>
         ))}
       </div>
-      <div className="relative h-20 border-b-2 border-slate-200">
+      <div className="relative border-b-2 border-slate-200" style={{ height: `${stripHeight}px` }}>
          {milestonesWithPositions.map((milestone) => (
           <MilestoneMarker 
             key={milestone.id} 
@@ -53,6 +64,31 @@ export function TimelineHeader({ projectSettings, milestones, handleEditMileston
             onSelect={(e) => onSelectMilestone?.(milestone.id, e)}
           />
         ))}
+        {onStripHeightChange && (
+          <div
+            className={`absolute inset-x-0 bottom-0 z-20 flex h-2 cursor-row-resize items-end transition-opacity ${resizing ? "opacity-100" : "opacity-0 hover:opacity-100"}`}
+            title="Arraste para ajustar a altura do espaço dos marcos"
+            data-keep-selection
+            onPointerDown={(e) => {
+              e.preventDefault()
+              e.currentTarget.setPointerCapture(e.pointerId)
+              resizeStart.current = { y: e.clientY, height: stripHeight }
+              setResizing(true)
+            }}
+            onPointerMove={(e) => {
+              if (!resizeStart.current) return
+              onStripHeightChange(clampStrip(resizeStart.current.height + e.clientY - resizeStart.current.y), false)
+            }}
+            onPointerUp={(e) => {
+              if (!resizeStart.current) return
+              onStripHeightChange(clampStrip(resizeStart.current.height + e.clientY - resizeStart.current.y), true)
+              resizeStart.current = null
+              setResizing(false)
+            }}
+          >
+            <div className="h-1 w-full rounded-full bg-primary/60" />
+          </div>
+        )}
       </div>
     </div>
   )

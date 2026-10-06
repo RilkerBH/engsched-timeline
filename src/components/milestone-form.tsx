@@ -24,12 +24,15 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { MilestoneData } from "@/domain/types"
+import type { MilestoneData, MilestoneShape } from "@/domain/types"
 import { useEffect } from "react"
 import { RotateCcw, Trash2 } from "lucide-react"
 import { ColorPicker } from "@/components/color-picker"
 import { DEFAULT_COLOR } from "@/domain/colors"
-import { MILESTONE_HEIGHT, milestoneSchema } from "@/domain/validation"
+import { MILESTONE_HEIGHT, MILESTONE_SHAPES, MILESTONE_STEM_HEIGHT, milestoneSchema } from "@/domain/validation"
+import { DEFAULT_MILESTONE_SHAPE, MILESTONE_SHAPE_LABELS, getMilestoneShapeGeometry } from "@/domain/milestone-shape"
+import { cn } from "@/lib/utils"
+import { MilestoneShapeElement } from "@/components/milestone-marker"
 import { ZERO_OFFSETS } from "@/domain/label-layout"
 import { Switch } from "@/components/ui/switch"
 
@@ -52,6 +55,9 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
     date: projectSettings.startDate,
     color: DEFAULT_COLOR,
     height: 30,
+    shape: DEFAULT_MILESTONE_SHAPE,
+    stemHeight: 0,
+    stemColor: "",
     ...ZERO_OFFSETS,
     preventNameLineBreak: false,
     dateFormat: 'dd/MM/yyyy' as const,
@@ -63,6 +69,9 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
       ...initialFormValues,
       ...(defaultValues || {}),
       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
+      shape: defaultValues?.shape || DEFAULT_MILESTONE_SHAPE,
+      stemHeight: defaultValues?.stemHeight ?? 0,
+      stemColor: defaultValues?.stemColor ?? "",
     }
   })
   
@@ -71,6 +80,9 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
       ...initialFormValues,
       ...(defaultValues || {}),
       dateFormat: defaultValues?.dateFormat || 'dd/MM/yyyy',
+      shape: defaultValues?.shape || DEFAULT_MILESTONE_SHAPE,
+      stemHeight: defaultValues?.stemHeight ?? 0,
+      stemColor: defaultValues?.stemColor ?? "",
     });
   }, [defaultValues, form, projectSettings.startDate]);
 
@@ -78,6 +90,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
     onSubmit({
       ...defaultValues,
       ...data,
+      stemColor: data.stemColor || undefined,
       id: defaultValues?.id || crypto.randomUUID(),
       // Keep manual label position adjustments (or reset them when requested)
       labelOffsetX: resetOffsets ? 0 : (defaultValues?.labelOffsetX ?? 0),
@@ -95,7 +108,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-headline">{defaultValues ? "Editar" : "Novo"} Marco</DialogTitle>
         </DialogHeader>
@@ -185,7 +198,7 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
               name="height"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Altura ({field.value}px)</FormLabel>
+                  <FormLabel>Tamanho do símbolo ({field.value}px)</FormLabel>
                   <FormControl>
                     <Slider
                       value={[field.value]}
@@ -198,6 +211,66 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="shape"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Formato</FormLabel>
+                  <div className="grid grid-cols-7 gap-1" role="radiogroup" aria-label="Formato do marco">
+                    {MILESTONE_SHAPES.map(shape => (
+                      <ShapeOption
+                        key={shape}
+                        shape={shape}
+                        color={form.watch("color")}
+                        selected={(field.value ?? DEFAULT_MILESTONE_SHAPE) === shape}
+                        onSelect={() => field.onChange(shape)}
+                      />
+                    ))}
+                  </div>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="stemHeight"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Altura da linha vertical ({field.value ?? 0}px{(field.value ?? 0) === 0 ? " — sem linha" : ""})</FormLabel>
+                  <FormControl>
+                    <Slider
+                      value={[field.value ?? 0]}
+                      onValueChange={(value) => field.onChange(value[0])}
+                      min={MILESTONE_STEM_HEIGHT.min}
+                      max={MILESTONE_STEM_HEIGHT.max}
+                      step={2}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {(form.watch("stemHeight") ?? 0) > 0 && (
+              <FormField
+                control={form.control}
+                name="stemColor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cor da linha</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <ColorPicker value={field.value ?? ""} onChange={field.onChange} placeholder="Mesma cor do marco" className="flex-1" />
+                      </FormControl>
+                      {field.value && (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => field.onChange("")}>
+                          Usar cor do marco
+                        </Button>
+                      )}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter className="sm:justify-between pt-4 border-t">
               <div className="flex items-center gap-2">
                 {defaultValues && onDelete && (
@@ -229,5 +302,27 @@ export function MilestoneForm({ isOpen, onClose, onSubmit, onDelete, projectSett
         </Form>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function ShapeOption({ shape, color, selected, onSelect }: { shape: MilestoneShape; color: string; selected: boolean; onSelect: () => void }) {
+  const g = getMilestoneShapeGeometry(shape, 18)
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      title={MILESTONE_SHAPE_LABELS[shape]}
+      aria-label={MILESTONE_SHAPE_LABELS[shape]}
+      onClick={onSelect}
+      className={cn(
+        "flex h-10 items-center justify-center rounded-md border transition-colors hover:bg-accent",
+        selected && "border-primary ring-2 ring-primary/40"
+      )}
+    >
+      <svg width={g.width} height={g.height} viewBox={`0 0 ${g.width} ${g.height}`} style={{ overflow: "visible" }}>
+        <MilestoneShapeElement geometry={g} fill={color} />
+      </svg>
+    </button>
   )
 }
