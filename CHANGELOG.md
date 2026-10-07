@@ -9,6 +9,14 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.5.1] - 2026-10-06
+
+### Corrigido
+
+- Versão registrada no `package-lock.json` sincronizada com a do
+  `package.json` (estava parada em 2.0.2).
+- Links de comparação do CHANGELOG completados para as versões 2.0.2 a 2.5.1.
+
 ## [2.5.0] - 2026-10-06
 
 ### Adicionado
@@ -286,6 +294,13 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[2.5.1]: https://github.com/RilkerBH/engsched-timeline/compare/v2.5.0...v2.5.1
+[2.5.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.4.0...v2.5.0
+[2.4.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.3.0...v2.4.0
+[2.3.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.2.0...v2.3.0
+[2.2.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.1.0...v2.2.0
+[2.1.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.0.2...v2.1.0
+[2.0.2]: https://github.com/RilkerBH/engsched-timeline/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/RilkerBH/engsched-timeline/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.7.0...v2.0.0
 [1.7.0]: https://github.com/RilkerBH/engsched-timeline/compare/v1.6.1...v1.7.0
