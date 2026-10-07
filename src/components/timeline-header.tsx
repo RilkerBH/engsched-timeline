@@ -1,9 +1,10 @@
 "use client"
 
 import { useRef, useState } from "react"
-import type { ProjectSettings, MilestoneData } from "@/domain/types"
+import type { ProjectSettings, MilestoneData, FontRole } from "@/domain/types"
 import { MILESTONE_STRIP_HEIGHT } from "@/domain/validation"
 import { getMonthHeaders, getMilestonePosition } from "@/domain/layout"
+import { lineHeightFor } from "@/domain/typography"
 import { MilestoneMarker } from "./milestone-marker"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 
@@ -17,14 +18,23 @@ type TimelineHeaderProps = {
   stripHeight: number;
   /** Called while dragging the strip's bottom edge (live preview) and once more when the drag ends (commit = true). */
   onStripHeightChange?: (height: number, commit: boolean) => void;
+  /** Font size (px) per kind of text. */
+  fontSizes: Record<FontRole, number>;
+  /** Called when a milestone's shape is dragged up/down to a new stem height. */
+  onMilestoneStemChange?: (milestone: MilestoneData, stemHeight: number) => void;
 }
+
+/** Height (px) of the month bar at the default 12px font. */
+const MONTH_BAR_HEIGHT = 40
 
 const clampStrip = (h: number) => Math.round(Math.min(MILESTONE_STRIP_HEIGHT.max, Math.max(MILESTONE_STRIP_HEIGHT.min, h)))
 
-export function TimelineHeader({ projectSettings, milestones, handleEditMilestone, selectedMilestoneIds = [], onSelectMilestone, stripHeight, onStripHeightChange }: TimelineHeaderProps) {
+export function TimelineHeader({ projectSettings, milestones, handleEditMilestone, selectedMilestoneIds = [], onSelectMilestone, stripHeight, onStripHeightChange, fontSizes, onMilestoneStemChange }: TimelineHeaderProps) {
   const resizeStart = useRef<{ y: number; height: number } | null>(null)
   const [resizing, setResizing] = useState(false)
 
+  const monthFontSize = fontSizes.monthHeader
+  const monthBarHeight = Math.max(MONTH_BAR_HEIGHT, lineHeightFor(monthFontSize) + 16)
   const monthHeaders = getMonthHeaders(projectSettings.startDate, projectSettings.endDate)
   const milestonesWithPositions = milestones.map(m => ({
     ...m,
@@ -33,7 +43,7 @@ export function TimelineHeader({ projectSettings, milestones, handleEditMileston
 
   return (
     <div className="relative z-10 select-none">
-      <div className="relative flex h-10 bg-gradient-to-r from-slate-500 to-slate-800 rounded-t-lg">
+      <div className="relative flex bg-gradient-to-r from-slate-500 to-slate-800 rounded-t-lg" style={{ height: monthBarHeight }}>
         {monthHeaders.map((month, index) => (
           <TooltipProvider key={index} delayDuration={150}>
             <Tooltip>
@@ -42,7 +52,7 @@ export function TimelineHeader({ projectSettings, milestones, handleEditMileston
                   className="flex-shrink-0 h-full flex items-center justify-center border-r border-slate-400/30 last:border-r-0"
                   style={{ width: `${month.width}%` }}
                 >
-                  <span className="text-xs font-semibold text-white tracking-wider">
+                  <span className="font-semibold text-white tracking-wider" style={{ fontSize: monthFontSize, lineHeight: `${lineHeightFor(monthFontSize)}px` }}>
                     {month.name}
                   </span>
                 </div>
@@ -62,6 +72,8 @@ export function TimelineHeader({ projectSettings, milestones, handleEditMileston
             onDoubleClick={() => handleEditMilestone(milestone)}
             selected={selectedMilestoneIds.includes(milestone.id)}
             onSelect={(e) => onSelectMilestone?.(milestone.id, e)}
+            fontSizes={{ name: fontSizes.milestoneName, date: fontSizes.milestoneDate }}
+            onStemHeightChange={onMilestoneStemChange && ((h) => onMilestoneStemChange(milestone, h))}
           />
         ))}
         {onStripHeightChange && (

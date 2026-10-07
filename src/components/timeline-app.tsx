@@ -9,6 +9,7 @@ import type { ProjectSettings, TaskData, MilestoneData, PeriodData } from "@/dom
 import { selectionSize } from "@/domain/bulk"
 import { MILESTONE_STRIP_HEIGHT } from "@/domain/validation"
 import { getPositionAndWidth, layoutTaskRows } from "@/domain/layout"
+import { resolveFontSizes } from "@/domain/typography"
 import { useProject } from "@/application/use-project"
 import { getProjectStorage } from "@/infrastructure/project-storage"
 import { useSelection } from "@/hooks/use-selection"
@@ -65,7 +66,8 @@ export default function TimelineApp() {
 
   const handleProjectSettingsSubmit = (data: Omit<ProjectSettings, "id">) => {
     const isEditing = !!settings
-    project.configureProject(data)
+    // The dialog only edits some fields; keep the others (e.g. font sizes)
+    project.configureProject(settings ? { ...settings, ...data } : data)
     toast({
       title: isEditing ? "Projeto Atualizado!" : "Projeto Criado!",
       description: isEditing ? "As configurações do projeto foram salvas." : "Você pode agora adicionar tarefas e marcos.",
@@ -160,6 +162,22 @@ export default function TimelineApp() {
     toast({ title: exists ? "Período Atualizado" : "Período Criado" })
   }
 
+  const handleMilestoneStemChange = (milestone: MilestoneData, stemHeight: number) => {
+    const current = milestones.find(m => m.id === milestone.id)
+    if (current) project.saveMilestone({ ...current, stemHeight })
+  }
+
+  const handlePeriodInsetsChange = (id: string, insets: { topInset: number; bottomInset: number }) => {
+    const current = periods.find(p => p.id === id)
+    if (!current) return
+    const { topInset: _top, bottomInset: _bottom, ...rest } = current
+    project.savePeriod({
+      ...rest,
+      ...(insets.topInset ? { topInset: insets.topInset } : {}),
+      ...(insets.bottomInset ? { bottomInset: insets.bottomInset } : {}),
+    })
+  }
+
   const handleDeletePeriod = (id: string) => {
     project.deletePeriod(id)
     toast({ title: "Período Excluído", variant: "destructive" })
@@ -237,6 +255,12 @@ export default function TimelineApp() {
     toast({ title: "Posições redefinidas", description: `${selectionSize(selection)} item(ns) com textos na posição padrão.` })
   }
 
+  const handleBulkDuplicate = () => {
+    const copies = project.duplicateItems(selection)
+    sel.replace(copies)
+    toast({ title: "Itens duplicados", description: `${selectionSize(copies)} cópia(s) criada(s) e selecionada(s).` })
+  }
+
   const handleBulkDelete = () => {
     const total = selectionSize(selection)
     project.deleteItems(selection)
@@ -246,6 +270,8 @@ export default function TimelineApp() {
   }
 
   // ----- Layout -----
+
+  const fontSizes = useMemo(() => resolveFontSizes(settings?.fontSizes), [settings?.fontSizes])
 
   const { rows, height: rowsHeight } = useMemo(
     () => settings ? layoutTaskRows(tasks, settings.startDate, settings.endDate, ROW_GAP, ROWS_TOP_PADDING) : { rows: [], height: ROWS_TOP_PADDING + ROW_GAP },
@@ -275,7 +301,7 @@ export default function TimelineApp() {
           <DndContext onDragEnd={handleLabelDragEnd}>
             <div className="w-full px-[5%]">
               <header className="mb-4">
-                <h1 className="font-headline text-3xl font-bold">{settings.title}</h1>
+                <h1 className="font-headline font-bold" style={{ fontSize: fontSizes.title, lineHeight: `${Math.round(fontSizes.title * 1.2)}px` }}>{settings.title}</h1>
               </header>
               <div onDoubleClick={handleTimelineDoubleClick}>
               <TimelineHeader
@@ -289,6 +315,8 @@ export default function TimelineApp() {
                 onSelectMilestone={sel.selectMilestone}
                 stripHeight={stripHeight}
                 onStripHeightChange={handleStripHeightChange}
+                fontSizes={fontSizes}
+                onMilestoneStemChange={handleMilestoneStemChange}
               />
               <div ref={rowsRef} className="relative" style={{ height: `${rowsHeight}px` }}>
                 {periodBands.map(period => (
@@ -296,6 +324,9 @@ export default function TimelineApp() {
                     key={period.id}
                     period={period}
                     extendUp={stripHeight}
+                    fullHeight={stripHeight + rowsHeight}
+                    legendFontSize={fontSizes.periodLegend}
+                    onInsetsChange={(insets) => handlePeriodInsetsChange(period.id, insets)}
                     onDoubleClick={() => {
                       setEditingPeriod(period)
                       setIsPeriodFormOpen(true)
@@ -313,6 +344,7 @@ export default function TimelineApp() {
                     onOrderChange={(dir) => project.moveTasks([task.id], dir)}
                     selected={selection.tasks.includes(task.id)}
                     onSelect={(e) => sel.selectTask(task.id, e)}
+                    fontSizes={{ name: fontSizes.taskName, date: fontSizes.taskDate }}
                   />
                 ))}
               </div>
@@ -337,6 +369,8 @@ export default function TimelineApp() {
           onLabelSide={(labelSide) => project.patchItems(selection, { labelSide })}
           onPreventLineBreak={(preventNameLineBreak) => project.patchItems(selection, { preventNameLineBreak })}
           onResetLabels={handleBulkResetLabels}
+          onFontScale={(direction) => project.scaleFonts(selection, direction)}
+          onDuplicate={handleBulkDuplicate}
           onDelete={requestBulkDelete}
         />
       )}
@@ -350,6 +384,8 @@ export default function TimelineApp() {
         onEditProject={() => setIsSettingsDialogOpen(true)}
         onSaveProject={handleSaveProject}
         onLoadProject={handleLoadProject}
+        fontSizes={settings.fontSizes}
+        onFontSizesChange={project.setFontSizes}
       />
 
       <ProjectSettingsDialog

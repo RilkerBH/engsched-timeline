@@ -139,3 +139,43 @@ export function shiftMilestoneDates(
   });
   return { items, outOfRange };
 }
+
+/**
+ * Copies of the selected tasks (in their visual order) and milestones, with
+ * fresh ids from `makeId` — interval ids included. Everything else (dates,
+ * names, colors, label offsets) is kept, so the copy looks identical.
+ */
+export function copyItems(
+  tasks: TaskData[],
+  milestones: MilestoneData[],
+  ids: Selection,
+  makeId: () => string
+): { tasks: TaskData[]; milestones: MilestoneData[] } {
+  const taskIds = new Set(ids.tasks);
+  const milestoneIds = new Set(ids.milestones);
+  return {
+    tasks: [...tasks]
+      .sort((a, b) => a.order - b.order)
+      .filter(t => taskIds.has(t.id))
+      .map(t => ({
+        ...t,
+        id: makeId(),
+        ...(t.intervals ? { intervals: t.intervals.map(iv => ({ ...iv, id: makeId() })) } : {}),
+      })),
+    milestones: milestones.filter(m => milestoneIds.has(m.id)).map(m => ({ ...m, id: makeId() })),
+  };
+}
+
+/**
+ * Inserts task copies right below the last of their source tasks, as one
+ * block in the given order. Returns a new list with `order` renumbered 0..n-1.
+ */
+export function insertTaskCopies(tasks: TaskData[], sourceIds: string[], copies: TaskData[]): TaskData[] {
+  const ordered = [...tasks].sort((a, b) => a.order - b.order);
+  const sources = new Set(sourceIds);
+  let lastSource = -1;
+  ordered.forEach((t, i) => { if (sources.has(t.id)) lastSource = i; });
+  const at = lastSource === -1 ? ordered.length : lastSource + 1;
+  const result = [...ordered.slice(0, at), ...copies, ...ordered.slice(at)];
+  return result.map((t, idx) => (t.order === idx ? t : { ...t, order: idx }));
+}

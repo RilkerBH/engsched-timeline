@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { MilestoneData, TaskData } from "@/domain/types";
 import {
   applyPatch,
+  copyItems,
+  insertTaskCopies,
   moveTasksBlock,
   rangeSelectTasks,
   selectionSize,
@@ -146,5 +148,34 @@ describe("shiftMilestoneDates", () => {
     expect(items[0].date).toBe("2026-06-20");
     expect(items[1].date).toBe("2026-12-30");
     expect(outOfRange).toEqual(["n"]);
+  });
+});
+
+describe("duplicating items", () => {
+  const t = (id: string, order: number, extra: Partial<TaskData> = {}): TaskData => ({
+    id, name: id, order, startDate: "2026-03-01", endDate: "2026-03-31", color: "#000000", height: 32,
+    showTextInside: false, labelOffsetX: 5, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0, ...extra,
+  });
+
+  it("copies tasks in visual order with fresh ids, intervals included", () => {
+    let n = 0;
+    const tasks = [
+      t("b", 1, { intervals: [
+        { id: "i1", name: "x", startDate: "2026-03-01", endDate: "2026-03-05", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+        { id: "i2", name: "y", startDate: "2026-03-10", endDate: "2026-03-31", labelOffsetX: 0, labelOffsetY: 0, dateLabelOffsetX: 0, dateLabelOffsetY: 0 },
+      ] }),
+      t("a", 0),
+    ];
+    const copies = copyItems(tasks, [], { tasks: ["b", "a"], milestones: [] }, () => `new${n++}`);
+    expect(copies.tasks.map(c => c.id)).toEqual(["new0", "new1"]);
+    expect(copies.tasks[0].name).toBe("a");
+    expect(copies.tasks[0].labelOffsetX).toBe(5);
+    expect(copies.tasks[1].intervals?.map(iv => iv.id)).toEqual(["new2", "new3"]);
+  });
+
+  it("inserts the copies right below the last selected task", () => {
+    const tasks = [t("a", 0), t("b", 1), t("c", 2)];
+    const result = insertTaskCopies(tasks, ["a", "b"], [t("a2", 0), t("b2", 1)]);
+    expect(result.map(x => [x.id, x.order])).toEqual([["a", 0], ["b", 1], ["a2", 2], ["b2", 3], ["c", 4]]);
   });
 });

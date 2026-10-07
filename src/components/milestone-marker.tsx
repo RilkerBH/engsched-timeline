@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef, useState } from "react"
 import type { MilestoneData } from "@/domain/types"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { format, parseISO } from "date-fns"
@@ -7,15 +8,30 @@ import { ptBR } from "date-fns/locale"
 import { useDraggable } from "@dnd-kit/core"
 import { LABEL_LAYOUT } from "@/domain/label-layout"
 import { type MilestoneShapeGeometry, getMilestoneShapeGeometry } from "@/domain/milestone-shape"
+import { lineHeightFor, scaledFontSize } from "@/domain/typography"
+import { MILESTONE_STEM_HEIGHT } from "@/domain/validation"
+
+/** Pointer travel (px) before a press on the shape counts as a drag instead of a click. */
+const DRAG_THRESHOLD = 3
+const clampStem = (h: number) => Math.round(Math.min(MILESTONE_STEM_HEIGHT.max, Math.max(MILESTONE_STEM_HEIGHT.min, h)))
 
 type MilestoneMarkerProps = {
   milestone: MilestoneData & { position: number };
   onDoubleClick: () => void;
   selected?: boolean;
   onSelect?: (event: React.MouseEvent) => void;
+  /** Role font sizes (px) of the name and date, before the milestone's own fontScale. */
+  fontSizes: { name: number; date: number };
+  /** Called once when a vertical drag of the shape ends, with the new stem height. */
+  onStemHeightChange?: (stemHeight: number) => void;
 }
 
-export function MilestoneMarker({ milestone, onDoubleClick, selected = false, onSelect }: MilestoneMarkerProps) {
+export function MilestoneMarker({ milestone, onDoubleClick, selected = false, onSelect, fontSizes, onStemHeightChange }: MilestoneMarkerProps) {
+  const stemDrag = useRef<{ y: number; stem: number; moved: boolean } | null>(null)
+  const suppressClick = useRef(false)
+  /** Live stem height while the shape is being dragged; null otherwise. */
+  const [draggedStem, setDraggedStem] = useState<number | null>(null)
+
   const nameDraggable = useDraggable({
     id: `name-milestone-${milestone.id}`,
     data: {
@@ -39,8 +55,13 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
   const tooltipDate = format(parseISO(milestone.date), 'dd/MM/yyyy', { locale: ptBR });
 
   const { nameAboveMarker, dateAboveMarker, stemWidth } = LABEL_LAYOUT.milestone;
+  const nameFontSize = scaledFontSize(fontSizes.name, milestone.fontScale);
+  const dateFontSize = scaledFontSize(fontSizes.date, milestone.fontScale);
+  const dateLineHeight = lineHeightFor(dateFontSize);
+  // The name sits above the date: keep the same gap between them whatever the date's size
+  const nameAbove = nameAboveMarker + dateLineHeight - lineHeightFor(12);
   const shape = getMilestoneShapeGeometry(milestone.shape, milestone.height);
-  const stemHeight = Math.max(0, milestone.stemHeight ?? 0);
+  const stemHeight = draggedStem ?? Math.max(0, milestone.stemHeight ?? 0);
   const stemColor = milestone.stemColor || milestone.color;
   const shapeStroke = selected
     ? { stroke: 'hsl(var(--primary))', strokeWidth: 3, strokeLinejoin: 'round' as const }
@@ -49,7 +70,9 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
   const nameDndTransform = nameDraggable.transform ? ` translate3d(${nameDraggable.transform.x}px, ${nameDraggable.transform.y}px, 0)` : '';
   const nameLabelStyle: React.CSSProperties = {
     position: 'absolute',
-    bottom: `calc(100% + ${nameAboveMarker}px)`,
+    bottom: `calc(100% + ${nameAbove}px)`,
+    fontSize: nameFontSize,
+    lineHeight: `${lineHeightFor(nameFontSize)}px`,
     left: 0,
     transform: `translate(calc(-50% + ${milestone.labelOffsetX || 0}px), ${milestone.labelOffsetY || 0}px) ${nameDndTransform}`,
     whiteSpace: milestone.preventNameLineBreak ? 'nowrap' : 'pre-wrap',
@@ -62,6 +85,8 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
   const dateLabelStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: `calc(100% + ${dateAboveMarker}px)`,
+    fontSize: dateFontSize,
+    lineHeight: `${dateLineHeight}px`,
     left: 0,
     transform: `translate(calc(-50% + ${milestone.dateLabelOffsetX || 0}px), ${milestone.dateLabelOffsetY || 0}px) ${dateDndTransform}`,
     whiteSpace: 'nowrap',
@@ -69,6 +94,32 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
     textAlign: 'center',
   };
 
+
+  // Pressing the shape and moving it up/down stretches the stem (its top end); a press without movement is a click
+  const stemAfter = (clientY: number) => stemDrag.current ? clampStem(stemDrag.current.stem + stemDrag.current.y - clientY) : 0
+  const stemDragHandlers = onStemHeightChange ? {
+    onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => {
+      if (e.button !== 0) return
+      e.currentTarget.setPointerCapture(e.pointerId)
+      stemDrag.current = { y: e.clientY, stem: stemHeight, moved: false }
+    },
+    onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => {
+      const d = stemDrag.current
+      if (!d) return
+      if (!d.moved && Math.abs(e.clientY - d.y) < DRAG_THRESHOLD) return
+      d.moved = true
+      setDraggedStem(stemAfter(e.clientY))
+    },
+    onPointerUp: (e: React.PointerEvent<SVGSVGElement>) => {
+      const next = stemAfter(e.clientY)
+      const moved = stemDrag.current?.moved
+      stemDrag.current = null
+      if (!moved) return
+      suppressClick.current = true
+      setDraggedStem(null)
+      if (next !== (milestone.stemHeight ?? 0)) onStemHeightChange(next)
+    },
+  } : {}
 
   return (
     <TooltipProvider delayDuration={150}>
@@ -92,8 +143,15 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
               width={shape.width}
               height={shape.height}
               viewBox={`0 0 ${shape.width} ${shape.height}`}
-              style={{ left: -shape.anchorX, overflow: 'visible', cursor: 'pointer', transformOrigin: `${shape.anchorX}px 100%` }}
-              onClick={(e) => onSelect?.(e)}
+              style={{ left: -shape.anchorX, overflow: 'visible', cursor: onStemHeightChange ? 'ns-resize' : 'pointer', transformOrigin: `${shape.anchorX}px 100%`, touchAction: 'none' }}
+              onClick={(e) => {
+                if (suppressClick.current) {
+                  suppressClick.current = false
+                  return
+                }
+                onSelect?.(e)
+              }}
+              {...stemDragHandlers}
             >
               <MilestoneShapeElement geometry={shape} fill={milestone.color} {...shapeStroke} />
             </svg>
@@ -101,7 +159,7 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
               ref={nameDraggable.setNodeRef}
               {...nameDraggable.listeners}
               {...nameDraggable.attributes}
-              className="text-xs leading-4 text-center text-foreground/80 font-semibold cursor-grab active:cursor-grabbing"
+              className="text-center text-foreground/80 font-semibold cursor-grab active:cursor-grabbing"
               style={nameLabelStyle}
             >
               {milestone.name}
@@ -110,16 +168,25 @@ export function MilestoneMarker({ milestone, onDoubleClick, selected = false, on
               ref={dateDraggable.setNodeRef}
               {...dateDraggable.listeners}
               {...dateDraggable.attributes}
-              className="text-xs leading-4 text-center text-foreground/60 cursor-grab active:cursor-grabbing"
+              className="text-center text-foreground/60 cursor-grab active:cursor-grabbing"
               style={dateLabelStyle}
             >
               {formattedDate}
             </div>
+            {draggedStem !== null && (
+              <div
+                className="absolute top-0 whitespace-nowrap rounded bg-foreground/80 px-1 text-[10px] leading-4 text-background"
+                style={{ left: shape.width - shape.anchorX + 4 }}
+              >
+                Linha: {draggedStem}px
+              </div>
+            )}
           </div>
         </TooltipTrigger>
         <TooltipContent side="bottom">
           <p className="font-bold">{milestone.name}</p>
           <p>{tooltipDate}</p>
+          {onStemHeightChange && <p className="text-muted-foreground">Arraste o símbolo para cima/baixo para ajustar a linha</p>}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

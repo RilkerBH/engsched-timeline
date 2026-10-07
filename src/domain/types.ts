@@ -5,7 +5,12 @@ export interface ProjectSettings {
   endDate: string;     // YYYY-MM-DD (UTC)
   /** Height (px) of the milestone strip between the month bar and the tasks. Absent = default. */
   milestoneStripHeight?: number;
+  /** Font size (px) per kind of text, only for the ones changed from the default. */
+  fontSizes?: FontSizes;
 }
+
+export type FontRole = 'title' | 'monthHeader' | 'taskName' | 'taskDate' | 'milestoneName' | 'milestoneDate' | 'periodLegend';
+export type FontSizes = Partial<Record<FontRole, number>>;
 
 export interface TaskInterval {
   id: string;
@@ -44,6 +49,8 @@ export interface TaskData {
   dateFormat?: 'dd/MM/yyyy' | 'MMM/yy';
   /** Side of the bar the name/date sit on when the name is outside the bar. Absent = "right". */
   labelSide?: TaskLabelSide;
+  /** Multiplier of this task's name/date font size. Absent = 1 (100%). */
+  fontScale?: number;
 }
 
 export type TaskLabelSide = 'right' | 'left';
@@ -68,6 +75,8 @@ export interface MilestoneData {
   dateLabelOffsetY: number;
   preventNameLineBreak?: boolean;
   dateFormat?: 'dd/MM/yyyy' | 'MMM/yy';
+  /** Multiplier of this milestone's name/date font size. Absent = 1 (100%). */
+  fontScale?: number;
 }
 
 /**
@@ -86,6 +95,10 @@ export interface PeriodData {
   /** Drag offset (px) of the standalone name legend, relative to its default position. */
   labelOffsetX: number;
   labelOffsetY: number;
+  /** Px the band's top edge is lowered from the top of the milestone strip. Absent = 0. */
+  topInset?: number;
+  /** Px the band's bottom edge is raised from the bottom of the task area. Absent = 0. */
+  bottomInset?: number;
 }
 
 export interface ProjectFile {

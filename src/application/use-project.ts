@@ -1,8 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useReducer } from "react";
-import type { MilestoneData, PeriodData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
-import { type BulkPatch, type Selection, selectionSize, shiftMilestoneDates, shiftTaskDates } from "@/domain/bulk";
+import type { FontSizes, MilestoneData, PeriodData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
+import { type BulkPatch, type Selection, copyItems, selectionSize, shiftMilestoneDates, shiftTaskDates } from "@/domain/bulk";
 import { createProjectFile } from "@/domain/project-file";
 import { INITIAL_PROJECT_STATE, type ItemKind, type LabelKind, projectReducer } from "./project-reducer";
 import { loadPersistedState, persistState } from "./project-persistence";
@@ -33,6 +33,7 @@ export function useProject() {
 
   const loadProject = useCallback((file: ProjectFile) => dispatch({ type: "project/loaded", file }), []);
   const resetProject = useCallback(() => dispatch({ type: "project/reset" }), []);
+  const setFontSizes = useCallback((fontSizes: FontSizes) => dispatch({ type: "project/fontSizesChanged", fontSizes }), []);
 
   const saveTask = useCallback((task: TaskData) => dispatch({ type: "task/saved", task }), []);
   const deleteTask = useCallback((id: string) => dispatch({ type: "task/deleted", id }), []);
@@ -52,6 +53,14 @@ export function useProject() {
   const patchItems = useCallback((ids: Selection, patch: BulkPatch) => dispatch({ type: "items/patched", ids, patch }), []);
   const resetLabels = useCallback((ids: Selection) => dispatch({ type: "items/labelsReset", ids }), []);
   const deleteItems = useCallback((ids: Selection) => dispatch({ type: "items/deleted", ids }), []);
+  const scaleFonts = useCallback((ids: Selection, direction: 1 | -1 | 0) => dispatch({ type: "items/fontScaled", ids, direction }), []);
+
+  /** Duplicates the selected tasks and milestones and returns the ids of the copies. */
+  const duplicateItems = useCallback((ids: Selection): Selection => {
+    const copies = copyItems(state.tasks, state.milestones, ids, () => crypto.randomUUID());
+    dispatch({ type: "items/duplicated", sourceTaskIds: ids.tasks, ...copies });
+    return { tasks: copies.tasks.map(t => t.id), milestones: copies.milestones.map(m => m.id) };
+  }, [state.tasks, state.milestones]);
 
   /** Shifts dates and reports how many items moved and how many were out of range. */
   const shiftDates = useCallback((ids: Selection, days: number): ShiftDatesResult => {
@@ -77,6 +86,7 @@ export function useProject() {
     configureProject,
     loadProject,
     resetProject,
+    setFontSizes,
     saveTask,
     deleteTask,
     saveMilestone,
@@ -88,12 +98,14 @@ export function useProject() {
     patchItems,
     resetLabels,
     deleteItems,
+    scaleFonts,
+    duplicateItems,
     shiftDates,
     toProjectFile,
   }), [
     state, isEmpty, configureProject, loadProject, resetProject, saveTask, deleteTask,
     saveMilestone, deleteMilestone, savePeriod, deletePeriod, dragLabel, moveTasks, patchItems, resetLabels, deleteItems,
-    shiftDates, toProjectFile,
+    scaleFonts, duplicateItems, shiftDates, toProjectFile, setFontSizes,
   ]);
 }
 

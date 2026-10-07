@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowDown, ArrowUp, CalendarClock, CheckSquare, ChevronDown, RotateCcw, Trash2, X } from "lucide-react"
+import { AArrowDown, AArrowUp, ArrowDown, ArrowUp, CalendarClock, CheckSquare, ChevronDown, CopyPlus, RotateCcw, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -33,13 +33,16 @@ type SelectionToolbarProps = {
   onLabelSide: (side: TaskLabelSide) => void
   onPreventLineBreak: (value: boolean) => void
   onResetLabels: () => void
+  /** direction 0 resets the text size of the selected items to 100%. */
+  onFontScale: (direction: 1 | -1 | 0) => void
+  onDuplicate: () => void
   onDelete: () => void
 }
 
 export function SelectionToolbar({
   selection, totalTasks, totalMilestones,
   onClear, onSelectAll, onColor, onDateFormat, onMove, onShiftDates,
-  onShowTextInside, onLabelSide, onPreventLineBreak, onResetLabels, onDelete,
+  onShowTextInside, onLabelSide, onPreventLineBreak, onResetLabels, onFontScale, onDuplicate, onDelete,
 }: SelectionToolbarProps) {
   const [shiftDays, setShiftDays] = useState("7")
   const nTasks = selection.tasks.length
@@ -119,6 +122,20 @@ export function SelectionToolbar({
         </div>
       )}
 
+      <div className="flex items-center gap-1">
+        <span className="mr-1 text-muted-foreground">Texto</span>
+        <Button size="icon" variant="outline" className="h-8 w-8" title="Diminuir texto dos selecionados" onClick={() => onFontScale(-1)}>
+          <AArrowDown className="h-4 w-4" />
+        </Button>
+        <Button size="icon" variant="outline" className="h-8 w-8" title="Aumentar texto dos selecionados" onClick={() => onFontScale(1)}>
+          <AArrowUp className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <Button variant="outline" size="sm" className="h-8" title="Criar cópias dos itens selecionados" onClick={onDuplicate}>
+        <CopyPlus className="mr-1 h-4 w-4" /> Duplicar
+      </Button>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8">
@@ -128,6 +145,9 @@ export function SelectionToolbar({
         <DropdownMenuContent align="start">
           <DropdownMenuItem onClick={onResetLabels}>
             <RotateCcw className="mr-2 h-4 w-4" /> Redefinir posição dos textos
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onFontScale(0)}>
+            <RotateCcw className="mr-2 h-4 w-4" /> Redefinir tamanho do texto
           </DropdownMenuItem>
           {hasTasks && (
             <>

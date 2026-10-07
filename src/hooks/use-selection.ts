@@ -43,6 +43,8 @@ export function useSelection(tasks: TaskData[], milestones: MilestoneData[], onD
     setRaw({ tasks: tasks.map(p => p.id), milestones: milestones.map(m => m.id) });
   }, [tasks, milestones]);
 
+  const replace = useCallback((next: Selection) => setRaw(next), []);
+
   useEffect(() => {
     if (!hasSelection) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -59,5 +61,5 @@ export function useSelection(tasks: TaskData[], milestones: MilestoneData[], onD
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [hasSelection, clear, onDeleteRequest]);
 
-  return { selection, hasSelection, clear, selectTask, selectMilestone, selectAll };
+  return { selection, hasSelection, clear, replace, selectTask, selectMilestone, selectAll };
 }

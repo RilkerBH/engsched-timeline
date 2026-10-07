@@ -9,6 +9,34 @@ e o projeto adota o [Versionamento Semântico](https://semver.org/lang/pt-BR/):
 - **MINOR** (1.1.0): novas funcionalidades compatíveis.
 - **PATCH** (1.0.1): correções de bugs.
 
+## [2.6.0] - 2026-10-07
+
+### Adicionado
+
+- **Linha do marco ajustável com o mouse**: segure o símbolo do marco e
+  arraste para cima ou para baixo para aumentar ou diminuir a linha vertical
+  (a altura aparece ao lado durante o arraste). Um clique simples continua
+  selecionando o marco.
+- **Tamanho das fontes**: novo botão *Fontes* na barra de controles, com
+  A−/A+ para todas as fontes de uma vez ou para cada tipo de texto em
+  separado — título, barra de meses, nome e datas das tarefas, nome e datas
+  dos marcos e legenda dos períodos. Na barra de seleção, *Texto A−/A+*
+  ajusta só os itens selecionados (e *Mais › Redefinir tamanho do texto*
+  volta a 100%).
+- **Altura da faixa do período**: arraste as bordas superior e inferior da
+  faixa (aparecem ao passar o mouse) ou informe *Recuo do topo* e *Recuo da
+  base* no formulário do período.
+- **Duplicar**: botão na barra de seleção que cria cópias das tarefas (logo
+  abaixo do bloco selecionado) e dos marcos selecionados; as cópias ficam
+  selecionadas, prontas para deslocar as datas.
+
+### Alterado
+
+- Formato do arquivo `.engsched` sobe para 1.8: o projeto ganha
+  `fontSizes`; tarefas e marcos ganham `fontScale`; períodos ganham
+  `topInset` e `bottomInset`. Todos opcionais — arquivos 1.7 abrem com a
+  aparência de antes.
+
 ## [2.5.1] - 2026-10-06
 
 ### Corrigido
@@ -294,6 +322,7 @@ Versão base do EngSched Timeline.
 - Salvar e abrir projetos (arquivo `.engsched`) no navegador e no Electron.
 - Persistência automática no `localStorage`.
 
+[2.6.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.5.1...v2.6.0
 [2.5.1]: https://github.com/RilkerBH/engsched-timeline/compare/v2.5.0...v2.5.1
 [2.5.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/RilkerBH/engsched-timeline/compare/v2.3.0...v2.4.0

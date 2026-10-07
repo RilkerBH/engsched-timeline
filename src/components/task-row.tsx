@@ -10,6 +10,7 @@ import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { LABEL_LAYOUT } from "@/domain/label-layout"
+import { lineHeightFor, scaledFontSize } from "@/domain/typography"
 
 type TaskRowProps = {
   task: TaskData & { left: number; width: number; top: number; bars: TaskBar[]; }
@@ -17,9 +18,13 @@ type TaskRowProps = {
   onOrderChange: (direction: 'up' | 'down') => void
   selected?: boolean
   onSelect?: (event: React.MouseEvent) => void
+  /** Role font sizes (px) of the name and date, before the task's own fontScale. */
+  fontSizes: { name: number; date: number }
 }
 
-export function TaskRow({ task, onDoubleClick, onOrderChange, selected = false, onSelect }: TaskRowProps) {
+export function TaskRow({ task, onDoubleClick, onOrderChange, selected = false, onSelect, fontSizes }: TaskRowProps) {
+  const nameFontSize = scaledFontSize(fontSizes.name, task.fontScale)
+  const dateFontSize = scaledFontSize(fontSizes.date, task.fontScale)
   return (
     <div
       style={{
@@ -48,6 +53,8 @@ export function TaskRow({ task, onDoubleClick, onOrderChange, selected = false, 
               labelSide={task.labelSide ?? 'right'}
               preventNameLineBreak={task.preventNameLineBreak}
               dateFormat={task.dateFormat}
+              nameFontSize={nameFontSize}
+              dateFontSize={dateFontSize}
               selected={selected}
               onDoubleClick={onDoubleClick}
             />
@@ -75,6 +82,8 @@ type TaskBarSegmentProps = {
   labelSide: TaskLabelSide
   preventNameLineBreak?: boolean
   dateFormat?: 'dd/MM/yyyy' | 'MMM/yy'
+  nameFontSize: number
+  dateFontSize: number
   selected: boolean
   onDoubleClick: () => void
 }
@@ -84,7 +93,7 @@ type TaskBarSegmentProps = {
  * independently draggable name/date labels, anchored to this bar's own
  * position inside the row (not the task's overall bounding box).
  */
-function TaskBarSegment({ taskId, bar, color, showTextInside, labelSide, preventNameLineBreak, dateFormat, selected, onDoubleClick }: TaskBarSegmentProps) {
+function TaskBarSegment({ taskId, bar, color, showTextInside, labelSide, preventNameLineBreak, dateFormat, nameFontSize, dateFontSize, selected, onDoubleClick }: TaskBarSegmentProps) {
   const suffix = bar.intervalId ?? 'primary';
   const nameDraggable = useDraggable({
     id: `name-task-${taskId}-${suffix}`,
@@ -114,6 +123,8 @@ function TaskBarSegment({ taskId, bar, color, showTextInside, labelSide, prevent
   const nameLabelStyle: React.CSSProperties = {
     position: 'absolute',
     whiteSpace: preventNameLineBreak ? 'nowrap' : 'pre-wrap',
+    fontSize: nameFontSize,
+    lineHeight: `${lineHeightFor(nameFontSize)}px`,
     zIndex: nameDraggable.transform ? 1000 : undefined,
   };
 
@@ -122,6 +133,8 @@ function TaskBarSegment({ taskId, bar, color, showTextInside, labelSide, prevent
     position: 'absolute',
     whiteSpace: 'nowrap',
     width: 'max-content',
+    fontSize: dateFontSize,
+    lineHeight: `${lineHeightFor(dateFontSize)}px`,
     zIndex: dateDraggable.transform ? 1000 : undefined,
   };
 
@@ -202,7 +215,7 @@ function TaskBarSegment({ taskId, bar, color, showTextInside, labelSide, prevent
           onDoubleClick();
         }}
         className={cn(
-          "text-xs font-medium leading-4 cursor-grab active:cursor-grabbing",
+          "font-medium cursor-grab active:cursor-grabbing",
           showTextInside ? "text-white" : "text-foreground"
         )}
         style={nameLabelStyle}
@@ -214,7 +227,7 @@ function TaskBarSegment({ taskId, bar, color, showTextInside, labelSide, prevent
         ref={dateDraggable.setNodeRef}
         {...dateDraggable.listeners}
         {...dateDraggable.attributes}
-        className="text-xs leading-4 text-foreground/60 cursor-grab active:cursor-grabbing"
+        className="text-foreground/60 cursor-grab active:cursor-grabbing"
         style={dateLabelStyle}
       >
         {formattedDateRange}

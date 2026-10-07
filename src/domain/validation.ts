@@ -12,6 +12,8 @@ export const MILESTONE_STRIP_HEIGHT = { min: 60, max: 480, default: 80 } as cons
 export const MILESTONE_SHAPES = ["triangle", "triangle-down", "flag", "diamond", "circle", "square", "star"] as const;
 export const TASK_LABEL_SIDES = ["right", "left"] as const;
 export const PERIOD_OPACITY = { min: 5, max: 80 } as const;
+/** Px the band's top/bottom edges can be pulled in; the band never gets shorter than minHeight. */
+export const PERIOD_INSET = { min: 0, max: 2000, minHeight: 24 } as const;
 export const DATE_FORMATS = ["dd/MM/yyyy", "MMM/yy"] as const;
 export const PERIOD_BORDER_STYLES = ["none", "solid", "dashed", "dotted"] as const;
 
@@ -131,6 +133,8 @@ export function periodSchema(project: DateRange) {
     opacity: z.number().min(PERIOD_OPACITY.min).max(PERIOD_OPACITY.max),
     borderStyle: z.enum(PERIOD_BORDER_STYLES),
     borderColor: z.string().refine(isValidHex, MESSAGES.invalidColor),
+    topInset: z.number().int().min(PERIOD_INSET.min).max(PERIOD_INSET.max).optional(),
+    bottomInset: z.number().int().min(PERIOD_INSET.min).max(PERIOD_INSET.max).optional(),
   }).superRefine((data, ctx) => {
     if (data.startDate > data.endDate) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: MESSAGES.endOnOrAfterStart, path: ["endDate"] });

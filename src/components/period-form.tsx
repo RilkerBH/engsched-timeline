@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ColorPicker } from "@/components/color-picker"
 import type { PeriodData } from "@/domain/types"
 import { DEFAULT_PERIOD_COLOR, DEFAULT_PERIOD_OPACITY, hexToRgba } from "@/domain/colors"
-import { PERIOD_BORDER_STYLES, PERIOD_OPACITY, periodSchema } from "@/domain/validation"
+import { PERIOD_BORDER_STYLES, PERIOD_INSET, PERIOD_OPACITY, periodSchema } from "@/domain/validation"
 
 const BORDER_STYLE_LABELS: Record<(typeof PERIOD_BORDER_STYLES)[number], string> = {
   none: "Nenhuma",
@@ -57,6 +57,8 @@ export function PeriodForm({ isOpen, onClose, onSubmit, onDelete, projectSetting
     opacity: DEFAULT_PERIOD_OPACITY,
     borderStyle: "none" as const,
     borderColor: DEFAULT_PERIOD_COLOR,
+    topInset: 0,
+    bottomInset: 0,
   }
 
   const form = useForm<z.infer<typeof dynamicSchema>>({
@@ -69,12 +71,16 @@ export function PeriodForm({ isOpen, onClose, onSubmit, onDelete, projectSetting
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValues, form, projectSettings.startDate, projectSettings.endDate])
 
-  const handleSubmit = (data: z.infer<typeof dynamicSchema>) => {
+  const handleSubmit = ({ topInset, bottomInset, ...data }: z.infer<typeof dynamicSchema>) => {
+    const { topInset: _top, bottomInset: _bottom, ...rest } = defaultValues ?? ({} as Partial<PeriodData>)
     onSubmit({
       labelOffsetX: 0,
       labelOffsetY: 0,
-      ...defaultValues,
+      ...rest,
       ...data,
+      // Zero is the default: keep the fields out of the file unless used
+      ...(topInset ? { topInset } : {}),
+      ...(bottomInset ? { bottomInset } : {}),
       id: defaultValues?.id || crypto.randomUUID(),
     })
     onClose()
@@ -209,6 +215,32 @@ export function PeriodForm({ isOpen, onClose, onSubmit, onDelete, projectSetting
                 )}
               />
             )}
+            <div className="grid grid-cols-2 gap-4">
+              {(["topInset", "bottomInset"] as const).map(name => (
+                <FormField
+                  key={name}
+                  control={form.control}
+                  name={name}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{name === "topInset" ? "Recuo do topo (px)" : "Recuo da base (px)"}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min={PERIOD_INSET.min}
+                          max={PERIOD_INSET.max}
+                          step={4}
+                          value={field.value ?? 0}
+                          onChange={(e) => field.onChange(e.target.value === "" ? 0 : Math.round(Number(e.target.value)))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+            <p className="-mt-2 text-xs text-muted-foreground">Também ajustável arrastando as bordas superior e inferior da faixa.</p>
             <DialogFooter className="sm:justify-between pt-4 border-t">
               <div className="flex items-center gap-2">
                 {defaultValues && onDelete && (

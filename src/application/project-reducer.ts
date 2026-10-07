@@ -1,13 +1,15 @@
-import type { MilestoneData, PeriodData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
+import type { FontSizes, MilestoneData, PeriodData, ProjectFile, ProjectSettings, TaskData } from "@/domain/types";
 import {
   type BulkPatch,
   type Selection,
   applyPatch,
+  insertTaskCopies,
   moveTasksBlock,
   shiftMilestoneDates,
   shiftTaskDates,
 } from "@/domain/bulk";
 import { type LabelOffsets, ZERO_OFFSETS, migrateMilestoneLabelOffsets, migrateTaskLabelOffsets } from "@/domain/label-layout";
+import { stepFontScale } from "@/domain/typography";
 
 /**
  * Single source of truth for a project. Every change goes through
@@ -35,6 +37,7 @@ export type ProjectAction =
   | { type: "project/configured"; settings: Omit<ProjectSettings, "id">; id: string }
   | { type: "project/loaded"; file: ProjectFile }
   | { type: "project/reset" }
+  | { type: "project/fontSizesChanged"; fontSizes: FontSizes }
   | { type: "task/saved"; task: TaskData }
   | { type: "task/deleted"; id: string }
   | { type: "milestone/saved"; milestone: MilestoneData }
@@ -46,6 +49,10 @@ export type ProjectAction =
   | { type: "items/labelsReset"; ids: Selection }
   | { type: "items/datesShifted"; ids: Selection; days: number }
   | { type: "items/deleted"; ids: Selection }
+  /** direction 0 resets the selected items to 100%. */
+  | { type: "items/fontScaled"; ids: Selection; direction: 1 | -1 | 0 }
+  /** Copies built by copyItems; task copies go right below their sources. */
+  | { type: "items/duplicated"; sourceTaskIds: string[]; tasks: TaskData[]; milestones: MilestoneData[] }
   | { type: "tasks/moved"; ids: string[]; direction: "up" | "down" }
   | { type: "labels/migrated" };
 
@@ -63,6 +70,13 @@ function dragLabel<T extends LabelOffsets>(item: T, label: LabelKind, delta: { x
 /** Periods only have a single draggable legend (no separate date label). */
 function dragPeriodLabel(period: PeriodData, delta: { x: number; y: number }): PeriodData {
   return { ...period, labelOffsetX: (period.labelOffsetX || 0) + delta.x, labelOffsetY: (period.labelOffsetY || 0) + delta.y };
+}
+
+/** Applies one font scale step to an item, dropping the field when back at 100%. */
+function scaleFont<T extends { fontScale?: number }>(item: T, direction: 1 | -1 | 0): T {
+  const { fontScale, ...rest } = item;
+  const next = stepFontScale(fontScale, direction);
+  return (next === undefined ? rest : { ...rest, fontScale: next }) as T;
 }
 
 /** Zeroes the label offsets of a task and of each of its intervals. */
@@ -89,6 +103,12 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
 
     case "project/reset":
       return INITIAL_PROJECT_STATE;
+
+    case "project/fontSizesChanged": {
+      if (!state.settings) return state;
+      const { fontSizes: _previous, ...settings } = state.settings;
+      return { ...state, settings: Object.keys(action.fontSizes).length > 0 ? { ...settings, fontSizes: action.fontSizes } : settings };
+    }
 
     case "task/saved": {
       const exists = state.tasks.some(p => p.id === action.task.id);
@@ -186,6 +206,23 @@ export function projectReducer(state: ProjectState, action: ProjectAction): Proj
         milestones: state.milestones.filter(m => !ms.has(m.id)),
       };
     }
+
+    case "items/fontScaled": {
+      const pk = new Set(action.ids.tasks);
+      const ms = new Set(action.ids.milestones);
+      return {
+        ...state,
+        tasks: state.tasks.map(t => (pk.has(t.id) ? scaleFont(t, action.direction) : t)),
+        milestones: state.milestones.map(m => (ms.has(m.id) ? scaleFont(m, action.direction) : m)),
+      };
+    }
+
+    case "items/duplicated":
+      return {
+        ...state,
+        tasks: action.tasks.length > 0 ? insertTaskCopies(state.tasks, action.sourceTaskIds, action.tasks) : state.tasks,
+        milestones: [...state.milestones, ...action.milestones],
+      };
 
     case "tasks/moved":
       return { ...state, tasks: moveTasksBlock(state.tasks, action.ids, action.direction) };

@@ -193,3 +193,28 @@ describe("task label side", () => {
     expect(next.milestones[0]).not.toHaveProperty("labelSide");
   });
 });
+
+describe("fonts and duplication", () => {
+  it("sets project font sizes, removing the field when back to defaults", () => {
+    const s = projectReducer(base, { type: "project/fontSizesChanged", fontSizes: { taskName: 14 } });
+    expect(s.settings?.fontSizes).toEqual({ taskName: 14 });
+    expect(s.settings?.title).toBe("Obra");
+    expect(projectReducer(s, { type: "project/fontSizesChanged", fontSizes: {} }).settings).not.toHaveProperty("fontSizes");
+  });
+
+  it("scales the text of the selected items and resets it", () => {
+    const up = projectReducer(base, { type: "items/fontScaled", ids: { tasks: ["a"], milestones: ["m"] }, direction: 1 });
+    expect(up.tasks.find(t => t.id === "a")?.fontScale).toBe(1.1);
+    expect(up.tasks.find(t => t.id === "b")).not.toHaveProperty("fontScale");
+    expect(up.milestones[0].fontScale).toBe(1.1);
+    const reset = projectReducer(up, { type: "items/fontScaled", ids: { tasks: ["a"], milestones: ["m"] }, direction: 0 });
+    expect(reset.tasks[0]).not.toHaveProperty("fontScale");
+    expect(reset.milestones[0]).not.toHaveProperty("fontScale");
+  });
+
+  it("inserts task copies below their sources and appends milestone copies", () => {
+    const s = projectReducer(base, { type: "items/duplicated", sourceTaskIds: ["a"], tasks: [task("a2", 0)], milestones: [ms("m2")] });
+    expect([...s.tasks].sort((x, y) => x.order - y.order).map(t => t.id)).toEqual(["a", "a2", "b"]);
+    expect(s.milestones.map(m => m.id)).toEqual(["m", "m2"]);
+  });
+});
