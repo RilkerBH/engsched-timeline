@@ -144,22 +144,24 @@ export function getTaskBars<T extends IntervalTask>(task: T): TaskBar[] {
 }
 
 /**
- * Stacks tasks vertically in `order`, each one `gap` px below the previous.
+ * Stacks tasks vertically in `order`, each one `gap` px below the previous,
+ * the first one `topPadding` px below the top of the container.
  * Returns the rows and the total container height (with a bottom padding of `gap`).
  */
 export function layoutTaskRows<T extends IntervalTask & { order: number; height: number }>(
   tasks: T[],
   projectStartDate: string,
   projectEndDate: string,
-  gap: number
+  gap: number,
+  topPadding = 0
 ): { rows: (T & TaskLayout & { bars: TaskBar[] })[]; height: number } {
   const sorted = [...tasks].sort((a, b) => a.order - b.order);
-  let top = 0;
+  let top = topPadding;
   const rows = sorted.map(task => {
     const row = { ...task, ...getPositionAndWidth(task.startDate, task.endDate, projectStartDate, projectEndDate), bars: getTaskBars(task), top };
     top += task.height + gap;
     return row;
   });
   const last = rows[rows.length - 1];
-  return { rows, height: last ? last.top + last.height + gap : gap };
+  return { rows, height: last ? last.top + last.height + gap : topPadding + gap };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMilestonePosition, getMonthHeaders, getPositionAndWidth, getTaskBars, getTaskRanges, inclusiveDays } from "@/domain/layout";
+import { getMilestonePosition, getMonthHeaders, getPositionAndWidth, getTaskBars, getTaskRanges, inclusiveDays, layoutTaskRows } from "@/domain/layout";
 
 const P = ["2026-01-01", "2026-12-31"] as const; // 365 days, both ends inclusive
 
@@ -143,5 +143,15 @@ describe("getMonthHeaders", () => {
     expect(headers[2].width).toBeCloseTo((10 / 55) * 100, 5);
     expect(headers.reduce((sum, h) => sum + h.width, 0)).toBeCloseTo(100, 10);
     expect(getMonthHeaders(...P).reduce((sum, h) => sum + h.width, 0)).toBeCloseTo(100, 10);
+  });
+});
+
+describe("layoutTaskRows top padding", () => {
+  it("pushes the first row (and the container height) down by topPadding", () => {
+    const t = (id: string, order: number) => ({ id, order, height: 20, startDate: "2026-01-01", endDate: "2026-01-10" });
+    const { rows, height } = layoutTaskRows([t("a", 0), t("b", 1)], "2026-01-01", "2026-12-31", 10, 14);
+    expect(rows.map(r => r.top)).toEqual([14, 44]);
+    expect(height).toBe(74);
+    expect(layoutTaskRows([], "2026-01-01", "2026-12-31", 10, 14).height).toBe(24);
   });
 });

@@ -28,6 +28,8 @@ import { Skeleton } from "./ui/skeleton"
 import { cn } from "@/lib/utils"
 
 const ROW_GAP = 20
+/** Space above the first task, so its outside labels don't cover the milestone strip's resize edge. */
+const ROWS_TOP_PADDING = 14
 const projectStorage = getProjectStorage()
 
 export default function TimelineApp() {
@@ -246,7 +248,7 @@ export default function TimelineApp() {
   // ----- Layout -----
 
   const { rows, height: rowsHeight } = useMemo(
-    () => settings ? layoutTaskRows(tasks, settings.startDate, settings.endDate, ROW_GAP) : { rows: [], height: ROW_GAP },
+    () => settings ? layoutTaskRows(tasks, settings.startDate, settings.endDate, ROW_GAP, ROWS_TOP_PADDING) : { rows: [], height: ROWS_TOP_PADDING + ROW_GAP },
     [tasks, settings]
   )
 
